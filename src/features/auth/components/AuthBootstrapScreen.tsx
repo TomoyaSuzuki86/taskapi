@@ -8,9 +8,9 @@ export function AuthBootstrapScreen() {
   return (
     <Frame>
       <AppHeader
-        title="Starting up"
-        subtitle="Resolving your session"
-        badgeLabel="Auth bootstrap"
+        title="起動中"
+        subtitle="ログイン状態を確認しています"
+        badgeLabel="認証確認"
       />
       <main className="app-shell__content">
         <div className="stack stack--page">
@@ -18,10 +18,10 @@ export function AuthBootstrapScreen() {
           <Card tone="muted">
             <div className="stack stack--tight">
               <p className="section-heading__eyebrow">Auth bootstrap</p>
-              <h2>Preparing your home screen</h2>
+              <h2>ホーム画面を準備しています</h2>
               <p className="muted-copy">
-                taskapi checks your Firebase session before rendering protected
-                routes so the app does not flash the wrong state.
+                保護された画面を開く前に Firebase
+                のセッションを確認し、誤った表示状態が一瞬見えないようにしています。
               </p>
             </div>
           </Card>

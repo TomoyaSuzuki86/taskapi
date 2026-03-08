@@ -9,6 +9,11 @@ import { useAuth } from '@/features/auth/useAuth';
 import { useProject } from '@/features/projects/useProject';
 import { useProjectActions } from '@/features/projects/useProjectActions';
 import { useTasks } from '@/features/tasks/useTasks';
+import {
+  formatDateLabel,
+  formatProjectStateLabel,
+  formatTaskStatusLabel,
+} from '@/lib/ui/display';
 import type { TaskStatus } from '@/types/domain';
 
 const emptyTaskForm = {
@@ -65,7 +70,7 @@ export function ProjectDetailPage() {
     return (
       <Card>
         <p className="section-heading__eyebrow">Project error</p>
-        <h2>Project could not load</h2>
+        <h2>プロジェクトを読み込めませんでした</h2>
         <p className="muted-copy">{errorMessage}</p>
       </Card>
     );
@@ -75,12 +80,12 @@ export function ProjectDetailPage() {
     return (
       <Card>
         <p className="section-heading__eyebrow">Missing project</p>
-        <h2>Project not found</h2>
+        <h2>プロジェクトが見つかりません</h2>
         <p className="muted-copy">
-          This project is unavailable or has been deleted.
+          このプロジェクトは利用できないか、削除されています。
         </p>
         <Link className="text-link" to="/">
-          Return to home
+          ホームへ戻る
         </Link>
       </Card>
     );
@@ -97,14 +102,18 @@ export function ProjectDetailPage() {
       });
     } catch (error) {
       setLocalError(
-        error instanceof Error ? error.message : 'Project update failed.',
+        error instanceof Error
+          ? error.message
+          : 'プロジェクトの更新に失敗しました。',
       );
     }
   };
 
   const handleProjectDelete = async () => {
     if (
-      !window.confirm('Delete this project and hide its tasks from the app?')
+      !window.confirm(
+        'このプロジェクトを削除して、関連タスクを一覧から非表示にしますか？',
+      )
     ) {
       return;
     }
@@ -116,7 +125,9 @@ export function ProjectDetailPage() {
       navigate('/');
     } catch (error) {
       setLocalError(
-        error instanceof Error ? error.message : 'Project delete failed.',
+        error instanceof Error
+          ? error.message
+          : 'プロジェクトの削除に失敗しました。',
       );
     }
   };
@@ -129,13 +140,13 @@ export function ProjectDetailPage() {
       setTaskForm(emptyTaskForm);
     } catch (error) {
       setLocalError(
-        error instanceof Error ? error.message : 'Task create failed.',
+        error instanceof Error ? error.message : 'タスクの作成に失敗しました。',
       );
     }
   };
 
   const handleTaskDelete = async (taskId: string) => {
-    if (!window.confirm('Delete this task?')) {
+    if (!window.confirm('このタスクを削除しますか？')) {
       return;
     }
 
@@ -145,7 +156,7 @@ export function ProjectDetailPage() {
       await tasksState.deleteTask(taskId);
     } catch (error) {
       setLocalError(
-        error instanceof Error ? error.message : 'Task delete failed.',
+        error instanceof Error ? error.message : 'タスクの削除に失敗しました。',
       );
     }
   };
@@ -157,160 +168,172 @@ export function ProjectDetailPage() {
   return (
     <div className="stack stack--page">
       <Card>
-        <div className="section-heading">
+        <div className="section-heading page-intro">
           <div>
             <p className="section-heading__eyebrow">Project detail</p>
             <h2>{project.name}</h2>
+            <p className="muted-copy">
+              {project.description ?? '説明はまだありません。'}
+            </p>
           </div>
           <span
             className={`pill ${project.archived ? 'pill--warning' : 'pill--ready'}`}
           >
-            {project.archived ? 'Archived' : 'Active'}
+            {formatProjectStateLabel(project.archived)}
           </span>
         </div>
-        <p className="muted-copy">
-          {project.description ?? 'No description yet.'}
-        </p>
-      </Card>
-
-      <Card tone="muted">
-        <div className="stack">
-          <div className="section-heading">
-            <div>
-              <p className="section-heading__eyebrow">Edit project</p>
-              <h3>Update project details</h3>
-            </div>
-          </div>
-          <Input
-            label="Project name"
-            value={projectForm.name}
-            onChange={(event) =>
-              setProjectForm((current) => ({
-                ...current,
-                name: event.target.value,
-              }))
-            }
-          />
-          <Textarea
-            label="Description"
-            rows={3}
-            value={projectForm.description}
-            onChange={(event) =>
-              setProjectForm((current) => ({
-                ...current,
-                description: event.target.value,
-              }))
-            }
-          />
-          <label className="checkbox-field">
-            <input
-              type="checkbox"
-              checked={projectForm.archived}
-              onChange={(event) =>
-                setProjectForm((current) => ({
-                  ...current,
-                  archived: event.target.checked,
-                }))
-              }
-            />
-            <span>Archive project</span>
-          </label>
-          <div className="button-row">
-            <Button
-              type="button"
-              onClick={() => void handleProjectSave()}
-              disabled={busyProjectId === project.id || !canSaveProject}
-            >
-              {busyProjectId === project.id ? 'Saving...' : 'Save project'}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => void handleProjectDelete()}
-              disabled={busyProjectId === project.id}
-            >
-              Delete project
-            </Button>
-          </div>
+        <div className="dashboard-metrics">
+          <span className="pill">タスク {sortedTasks.length}件</span>
+          <span className="pill">削除済み {deletedTasks.length}件</span>
+          <span className="pill">
+            更新日 {formatDateLabel(project.updatedAt)}
+          </span>
         </div>
       </Card>
 
-      <Card>
-        <div className="stack">
-          <div className="section-heading">
-            <div>
-              <p className="section-heading__eyebrow">Create task</p>
-              <h3>New task</h3>
+      <div className="dashboard-grid">
+        <Card tone="muted">
+          <div className="stack">
+            <div className="section-heading">
+              <div>
+                <p className="section-heading__eyebrow">Create task</p>
+                <h3>新しいタスク</h3>
+              </div>
             </div>
-          </div>
-          <Input
-            label="Task title"
-            value={taskForm.title}
-            onChange={(event) =>
-              setTaskForm((current) => ({
-                ...current,
-                title: event.target.value,
-              }))
-            }
-          />
-          <Textarea
-            label="Notes"
-            rows={3}
-            value={taskForm.notes}
-            onChange={(event) =>
-              setTaskForm((current) => ({
-                ...current,
-                notes: event.target.value,
-              }))
-            }
-          />
-          <div className="split-fields">
-            <label className="field">
-              <span className="field__label">Status</span>
-              <select
-                className="field__input"
-                value={taskForm.status}
-                onChange={(event) =>
-                  setTaskForm((current) => ({
-                    ...current,
-                    status: event.target.value as TaskStatus,
-                  }))
-                }
-              >
-                <option value="todo">Todo</option>
-                <option value="doing">Doing</option>
-                <option value="done">Done</option>
-              </select>
-            </label>
+            <p className="muted-copy">
+              まずは次に着手するタスクを追加します。必要な情報だけを短く入れておく運用に向いています。
+            </p>
             <Input
-              label="Due date"
-              type="date"
-              value={taskForm.dueDate}
+              label="タスク名"
+              value={taskForm.title}
               onChange={(event) =>
                 setTaskForm((current) => ({
                   ...current,
-                  dueDate: event.target.value,
+                  title: event.target.value,
                 }))
               }
             />
+            <Textarea
+              label="メモ"
+              rows={3}
+              value={taskForm.notes}
+              onChange={(event) =>
+                setTaskForm((current) => ({
+                  ...current,
+                  notes: event.target.value,
+                }))
+              }
+            />
+            <div className="split-fields">
+              <label className="field">
+                <span className="field__label">ステータス</span>
+                <select
+                  className="field__input"
+                  value={taskForm.status}
+                  onChange={(event) =>
+                    setTaskForm((current) => ({
+                      ...current,
+                      status: event.target.value as TaskStatus,
+                    }))
+                  }
+                >
+                  <option value="todo">未着手</option>
+                  <option value="doing">進行中</option>
+                  <option value="done">完了</option>
+                </select>
+              </label>
+              <Input
+                label="期限"
+                type="date"
+                value={taskForm.dueDate}
+                onChange={(event) =>
+                  setTaskForm((current) => ({
+                    ...current,
+                    dueDate: event.target.value,
+                  }))
+                }
+              />
+            </div>
+            <Button
+              type="button"
+              onClick={() => void handleTaskCreate()}
+              disabled={tasksState.isCreating || !canCreateTask}
+            >
+              {tasksState.isCreating ? '作成中...' : 'タスクを追加'}
+            </Button>
           </div>
-          <Button
-            type="button"
-            onClick={() => void handleTaskCreate()}
-            disabled={tasksState.isCreating || !canCreateTask}
-          >
-            {tasksState.isCreating ? 'Creating...' : 'Create task'}
-          </Button>
-        </div>
-      </Card>
+        </Card>
+
+        <Card>
+          <div className="stack">
+            <div className="section-heading">
+              <div>
+                <p className="section-heading__eyebrow">Edit project</p>
+                <h3>プロジェクト設定</h3>
+              </div>
+            </div>
+            <Input
+              label="プロジェクト名"
+              value={projectForm.name}
+              onChange={(event) =>
+                setProjectForm((current) => ({
+                  ...current,
+                  name: event.target.value,
+                }))
+              }
+            />
+            <Textarea
+              label="説明"
+              rows={3}
+              value={projectForm.description}
+              onChange={(event) =>
+                setProjectForm((current) => ({
+                  ...current,
+                  description: event.target.value,
+                }))
+              }
+            />
+            <label className="checkbox-field">
+              <input
+                type="checkbox"
+                checked={projectForm.archived}
+                onChange={(event) =>
+                  setProjectForm((current) => ({
+                    ...current,
+                    archived: event.target.checked,
+                  }))
+                }
+              />
+              <span>アーカイブする</span>
+            </label>
+            <div className="button-row">
+              <Button
+                type="button"
+                onClick={() => void handleProjectSave()}
+                disabled={busyProjectId === project.id || !canSaveProject}
+              >
+                {busyProjectId === project.id ? '保存中...' : '保存する'}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void handleProjectDelete()}
+                disabled={busyProjectId === project.id}
+              >
+                プロジェクトを削除
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       <Card tone="muted">
         <div className="section-heading">
           <div>
             <p className="section-heading__eyebrow">Tasks</p>
-            <h3>Project task list</h3>
+            <h3>タスク一覧</h3>
           </div>
-          <span className="pill">{sortedTasks.length} items</span>
+          <span className="pill">{sortedTasks.length}件</span>
         </div>
         {taskErrors ? (
           <p className="notice-inline" role="alert">
@@ -324,13 +347,13 @@ export function ProjectDetailPage() {
           <p className="muted-copy">{tasksState.errorMessage}</p>
         ) : sortedTasks.length === 0 ? (
           <div className="empty-state">
-            <h3>No tasks yet</h3>
+            <h3>まだタスクがありません</h3>
             <p className="muted-copy">
-              Create the first task for this project above.
+              上のフォームから最初のタスクを追加してください。
             </p>
           </div>
         ) : (
-          <div className="stack">
+          <div className="workspace-list">
             {sortedTasks.map((task) => {
               const draft = taskDrafts[task.id] ?? {
                 title: task.title,
@@ -344,25 +367,26 @@ export function ProjectDetailPage() {
 
               return (
                 <Card key={task.id}>
-                  <div className="stack stack--tight">
-                    <div className="section-heading section-heading--compact">
-                      <div>
+                  <div className="workspace-row">
+                    <div className="workspace-row__main">
+                      <div className="workspace-row__topline">
                         <h3>{task.title}</h3>
-                        <p className="muted-copy">
-                          {task.notes ?? 'No notes yet.'}
-                        </p>
+                        <span className="pill">
+                          {formatTaskStatusLabel(task.status)}
+                        </span>
                       </div>
-                      <span className="pill">{task.status}</span>
+                      <p className="muted-copy">
+                        {task.notes ?? 'メモはまだありません。'}
+                      </p>
+                      <p className="workspace-row__meta">
+                        期限 {formatDateLabel(task.dueDate)}
+                      </p>
                     </div>
-                    <p className="muted-copy">
-                      Due:{' '}
-                      {task.dueDate ? task.dueDate.slice(0, 10) : 'Not set'}
-                    </p>
 
                     {isEditing ? (
-                      <div className="stack">
+                      <div className="stack workspace-row__editor">
                         <Input
-                          label="Task title"
+                          label="タスク名"
                           value={draft.title}
                           onChange={(event) =>
                             setTaskDrafts((current) => ({
@@ -375,7 +399,7 @@ export function ProjectDetailPage() {
                           }
                         />
                         <Textarea
-                          label="Notes"
+                          label="メモ"
                           rows={3}
                           value={draft.notes}
                           onChange={(event) =>
@@ -390,7 +414,7 @@ export function ProjectDetailPage() {
                         />
                         <div className="split-fields">
                           <label className="field">
-                            <span className="field__label">Status</span>
+                            <span className="field__label">ステータス</span>
                             <select
                               className="field__input"
                               value={draft.status}
@@ -404,13 +428,13 @@ export function ProjectDetailPage() {
                                 }))
                               }
                             >
-                              <option value="todo">Todo</option>
-                              <option value="doing">Doing</option>
-                              <option value="done">Done</option>
+                              <option value="todo">未着手</option>
+                              <option value="doing">進行中</option>
+                              <option value="done">完了</option>
                             </select>
                           </label>
                           <Input
-                            label="Due date"
+                            label="期限"
                             type="date"
                             value={draft.dueDate}
                             onChange={(event) =>
@@ -437,13 +461,13 @@ export function ProjectDetailPage() {
                                   setLocalError(
                                     error instanceof Error
                                       ? error.message
-                                      : 'Task update failed.',
+                                      : 'タスクの更新に失敗しました。',
                                   );
                                 })
                             }
                             disabled={isBusy || !canSaveTask}
                           >
-                            {isBusy ? 'Saving...' : 'Save task'}
+                            {isBusy ? '保存中...' : '保存する'}
                           </Button>
                           <Button
                             type="button"
@@ -451,12 +475,12 @@ export function ProjectDetailPage() {
                             onClick={() => setEditingTaskId(null)}
                             disabled={isBusy}
                           >
-                            Cancel
+                            キャンセル
                           </Button>
                         </div>
                       </div>
                     ) : (
-                      <div className="button-row">
+                      <div className="button-row workspace-row__actions">
                         <Button
                           type="button"
                           variant="secondary"
@@ -468,7 +492,7 @@ export function ProjectDetailPage() {
                             }));
                           }}
                         >
-                          Edit
+                          編集
                         </Button>
                         <Button
                           type="button"
@@ -476,7 +500,7 @@ export function ProjectDetailPage() {
                           onClick={() => void handleTaskDelete(task.id)}
                           disabled={isBusy}
                         >
-                          Delete
+                          削除
                         </Button>
                       </div>
                     )}
@@ -492,45 +516,47 @@ export function ProjectDetailPage() {
         <div className="section-heading">
           <div>
             <p className="section-heading__eyebrow">Deleted items</p>
-            <h3>Restore tasks</h3>
+            <h3>削除済みタスク</h3>
           </div>
-          <span className="pill">{deletedTasks.length} deleted</span>
+          <span className="pill">{deletedTasks.length}件</span>
         </div>
 
         {deletedTasks.length === 0 ? (
           <div className="empty-state">
-            <h3>No deleted tasks</h3>
+            <h3>削除済みタスクはありません</h3>
             <p className="muted-copy">
-              Deleted tasks for this project will appear here until restored.
+              削除したタスクはここに残り、必要なときに復元できます。
             </p>
           </div>
         ) : (
-          <div className="stack">
+          <div className="workspace-list">
             {deletedTasks.map((task) => (
               <Card key={task.id}>
-                <div className="section-heading section-heading--compact">
-                  <div>
+                <div className="workspace-row">
+                  <div className="workspace-row__main">
                     <h3>{task.title}</h3>
-                    <p className="muted-copy">
-                      Deleted {task.deletedAt?.slice(0, 10)}
+                    <p className="workspace-row__meta">
+                      削除日 {formatDateLabel(task.deletedAt)}
                     </p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={tasksState.busyTaskId === task.id}
-                    onClick={() =>
-                      void tasksState.restoreTask(task.id).catch((error) => {
-                        setLocalError(
-                          error instanceof Error
-                            ? error.message
-                            : 'Task restore failed.',
-                        );
-                      })
-                    }
-                  >
-                    Restore
-                  </Button>
+                  <div className="button-row workspace-row__actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={tasksState.busyTaskId === task.id}
+                      onClick={() =>
+                        void tasksState.restoreTask(task.id).catch((error) => {
+                          setLocalError(
+                            error instanceof Error
+                              ? error.message
+                              : 'タスクの復元に失敗しました。',
+                          );
+                        })
+                      }
+                    >
+                      復元
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ))}

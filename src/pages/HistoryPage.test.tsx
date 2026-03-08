@@ -60,10 +60,10 @@ describe('HistoryPage', () => {
       </TestAuthProvider>,
     );
 
-    expect(screen.getByText('Recent activity')).toBeInTheDocument();
+    expect(screen.getByText('更新履歴')).toBeInTheDocument();
     expect(screen.getByText('Write tests -> done')).toBeInTheDocument();
     expect(screen.getByText('Project one')).toBeInTheDocument();
-    expect(screen.getByText('status_change')).toBeInTheDocument();
-    expect(screen.getByText('create')).toBeInTheDocument();
+    expect(screen.getByText('ステータス変更')).toBeInTheDocument();
+    expect(screen.getByText('作成')).toBeInTheDocument();
   });
 });

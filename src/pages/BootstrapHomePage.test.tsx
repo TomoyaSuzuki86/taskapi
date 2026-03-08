@@ -38,7 +38,9 @@ describe('BootstrapHomePage', () => {
       </TestAuthProvider>,
     );
 
-    expect(screen.getByText('No projects yet')).toBeInTheDocument();
+    expect(
+      screen.getByText('まだプロジェクトがありません'),
+    ).toBeInTheDocument();
   });
 
   it('creates a project through the repository layer', async () => {
@@ -62,9 +64,11 @@ describe('BootstrapHomePage', () => {
       </TestAuthProvider>,
     );
 
-    await user.type(screen.getByLabelText('Project name'), 'Launch plan');
-    await user.type(screen.getByLabelText('Description'), 'Ship CRUD phase');
-    await user.click(screen.getByRole('button', { name: 'Create project' }));
+    await user.type(screen.getByLabelText('プロジェクト名'), 'Launch plan');
+    await user.type(screen.getByLabelText('説明'), 'Ship CRUD phase');
+    await user.click(
+      screen.getByRole('button', { name: 'プロジェクトを作成' }),
+    );
 
     await waitFor(() => {
       expect(createProject).toHaveBeenCalledWith('user-1', {
@@ -106,7 +110,7 @@ describe('BootstrapHomePage', () => {
       </TestAuthProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Restore' }));
+    await user.click(screen.getByRole('button', { name: '復元' }));
 
     await waitFor(() => {
       expect(restoreProject).toHaveBeenCalledWith('user-1', 'proj-deleted');

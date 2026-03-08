@@ -45,14 +45,16 @@ describe('AppShell', () => {
       </TestAuthProvider>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
     expect(
-      screen.getByRole('navigation', { name: 'Primary' }),
+      screen.getByRole('heading', { name: 'ワークスペース' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Sign out' }),
+      screen.getByRole('navigation', { name: 'メインナビゲーション' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Your workspace')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'ログアウト' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('進行中のプロジェクト')).toBeInTheDocument();
   });
 
   it('shows an offline banner when the browser is offline', () => {
@@ -83,7 +85,9 @@ describe('AppShell', () => {
     );
 
     expect(
-      screen.getByText(/Offline mode\. Cached screens can still open/i),
+      screen.getByText(
+        /オフラインです。保存済みの画面は開けますが、同期や更新は通信が戻るまで反映されません。/i,
+      ),
     ).toBeInTheDocument();
 
     vi.stubGlobal('navigator', originalNavigator);

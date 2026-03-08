@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { useAuth } from '@/features/auth/useAuth';
 import { useProjects } from '@/features/projects/useProjects';
+import { formatDateLabel, formatProjectStateLabel } from '@/lib/ui/display';
 
 export function BootstrapHomePage() {
   const { user } = useAuth();
@@ -33,225 +34,242 @@ export function BootstrapHomePage() {
   return (
     <div className="stack stack--page">
       <Card>
-        <div className="section-heading">
+        <div className="section-heading page-intro">
           <div>
-            <p className="section-heading__eyebrow">Authenticated home</p>
-            <h2>Session active</h2>
+            <p className="section-heading__eyebrow">Workspace overview</p>
+            <h2>今日のワークスペース</h2>
+            <p className="muted-copy">
+              {user?.displayName ?? 'あなた'}
+              の作業をプロジェクト単位で整理できます。
+              必要なものだけを上から順に確認できる、静かなホーム画面です。
+            </p>
           </div>
-          <span className="pill pill--ready">Signed in</span>
+          <div className="dashboard-metrics">
+            <span className="pill">{projects.length}件の進行中</span>
+            <span className="pill">{deletedProjects.length}件の削除済み</span>
+          </div>
         </div>
-        <p className="muted-copy">
-          Signed in as {user?.displayName ?? 'your Google account'}
-          {user?.email ? ` (${user.email})` : ''}. Route protection and session
-          persistence are now active.
-        </p>
       </Card>
-      <Card tone="muted">
-        <div className="stack">
-          <div className="section-heading">
-            <div>
-              <p className="section-heading__eyebrow">Create project</p>
-              <h3>New project</h3>
+
+      <div className="dashboard-grid">
+        <Card tone="muted">
+          <div className="stack">
+            <div className="section-heading">
+              <div>
+                <p className="section-heading__eyebrow">Create project</p>
+                <h3>新しいプロジェクト</h3>
+              </div>
             </div>
-          </div>
-          <Input
-            label="Project name"
-            value={draft.name}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                name: event.target.value,
-              }))
-            }
-          />
-          <Textarea
-            label="Description"
-            rows={3}
-            value={draft.description}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                description: event.target.value,
-              }))
-            }
-          />
-          <Button
-            type="button"
-            disabled={isCreating || !canCreateProject}
-            onClick={() =>
-              void createProject(draft)
-                .then((projectId) => {
-                  setDraft({ name: '', description: '' });
-                  setLocalError(null);
-                  navigate(`/projects/${projectId}`);
-                })
-                .catch((error) => {
-                  setLocalError(
-                    error instanceof Error
-                      ? error.message
-                      : 'Project creation failed.',
-                  );
-                })
-            }
-          >
-            {isCreating ? 'Creating...' : 'Create project'}
-          </Button>
-        </div>
-      </Card>
-
-      <Card>
-        <div className="section-heading">
-          <div>
-            <p className="section-heading__eyebrow">Projects</p>
-            <h3>Your workspace</h3>
-          </div>
-          <span className="pill">{projects.length} projects</span>
-        </div>
-
-        {errorMessage || localError ? (
-          <p className="notice-inline" role="alert">
-            {errorMessage ?? localError}
-          </p>
-        ) : null}
-
-        {status === 'loading' ? (
-          <ProjectListSkeleton />
-        ) : status === 'error' ? (
-          <p className="muted-copy">
-            Firestore project data could not be loaded right now.
-          </p>
-        ) : projects.length === 0 ? (
-          <div className="empty-state">
-            <h3>No projects yet</h3>
             <p className="muted-copy">
-              Create your first project to start tracking tasks.
+              まずは作業単位をひとつ作成します。詳細はあとからいつでも調整できます。
             </p>
+            <Input
+              label="プロジェクト名"
+              value={draft.name}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  name: event.target.value,
+                }))
+              }
+            />
+            <Textarea
+              label="説明"
+              rows={3}
+              value={draft.description}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  description: event.target.value,
+                }))
+              }
+            />
+            <Button
+              type="button"
+              disabled={isCreating || !canCreateProject}
+              onClick={() =>
+                void createProject(draft)
+                  .then((projectId) => {
+                    setDraft({ name: '', description: '' });
+                    setLocalError(null);
+                    navigate(`/projects/${projectId}`);
+                  })
+                  .catch((error) => {
+                    setLocalError(
+                      error instanceof Error
+                        ? error.message
+                        : 'Project creation failed.',
+                    );
+                  })
+              }
+            >
+              {isCreating ? '作成中...' : 'プロジェクトを作成'}
+            </Button>
           </div>
-        ) : (
-          <div className="stack">
-            {projects.map((project) => (
-              <Card key={project.id}>
-                <div className="stack stack--tight">
-                  <div className="section-heading section-heading--compact">
-                    <div>
-                      <h3>{project.name}</h3>
-                      <p className="muted-copy">
-                        {project.description ?? 'No description yet.'}
-                      </p>
+        </Card>
+
+        <div className="stack stack--page">
+          <Card>
+            <div className="section-heading">
+              <div>
+                <p className="section-heading__eyebrow">Projects</p>
+                <h3>進行中のプロジェクト</h3>
+              </div>
+              <span className="pill">{projects.length}件</span>
+            </div>
+
+            {errorMessage || localError ? (
+              <p className="notice-inline" role="alert">
+                {errorMessage ?? localError}
+              </p>
+            ) : null}
+
+            {status === 'loading' ? (
+              <ProjectListSkeleton />
+            ) : status === 'error' ? (
+              <p className="muted-copy">
+                プロジェクト一覧を読み込めませんでした。
+              </p>
+            ) : projects.length === 0 ? (
+              <div className="empty-state">
+                <h3>まだプロジェクトがありません</h3>
+                <p className="muted-copy">
+                  最初のプロジェクトを作成して、作業の土台を作りましょう。
+                </p>
+              </div>
+            ) : (
+              <div className="workspace-list">
+                {projects.map((project) => (
+                  <Card key={project.id}>
+                    <div className="workspace-row">
+                      <div className="workspace-row__main">
+                        <div className="workspace-row__topline">
+                          <h3>{project.name}</h3>
+                          <span
+                            className={`pill ${project.archived ? 'pill--warning' : 'pill--ready'}`}
+                          >
+                            {formatProjectStateLabel(project.archived)}
+                          </span>
+                        </div>
+                        <p className="muted-copy">
+                          {project.description ?? '説明はまだありません。'}
+                        </p>
+                        <p className="workspace-row__meta">
+                          最終更新 {formatDateLabel(project.updatedAt)}
+                        </p>
+                      </div>
+                      <div className="button-row workspace-row__actions">
+                        <Link
+                          className="text-link"
+                          to={`/projects/${project.id}`}
+                        >
+                          開く
+                        </Link>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={busyProjectId === project.id}
+                          onClick={() =>
+                            void updateProject(project.id, {
+                              name: project.name,
+                              description: project.description ?? '',
+                              archived: !project.archived,
+                            }).catch((error) => {
+                              setLocalError(
+                                error instanceof Error
+                                  ? error.message
+                                  : 'プロジェクトの更新に失敗しました。',
+                              );
+                            })
+                          }
+                        >
+                          {project.archived ? '再開' : 'アーカイブ'}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={busyProjectId === project.id}
+                          onClick={() => {
+                            if (
+                              !window.confirm(
+                                'このプロジェクトを削除して、関連タスクを一覧から非表示にしますか？',
+                              )
+                            ) {
+                              return;
+                            }
+
+                            void deleteProject(project.id).catch((error) => {
+                              setLocalError(
+                                error instanceof Error
+                                  ? error.message
+                                  : 'プロジェクトの削除に失敗しました。',
+                              );
+                            });
+                          }}
+                        >
+                          削除
+                        </Button>
+                      </div>
                     </div>
-                    <span
-                      className={`pill ${project.archived ? 'pill--warning' : 'pill--ready'}`}
-                    >
-                      {project.archived ? 'Archived' : 'Active'}
-                    </span>
-                  </div>
-                  <div className="button-row">
-                    <Link className="text-link" to={`/projects/${project.id}`}>
-                      Open project
-                    </Link>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={busyProjectId === project.id}
-                      onClick={() =>
-                        void updateProject(project.id, {
-                          name: project.name,
-                          description: project.description ?? '',
-                          archived: !project.archived,
-                        }).catch((error) => {
-                          setLocalError(
-                            error instanceof Error
-                              ? error.message
-                              : 'Project update failed.',
-                          );
-                        })
-                      }
-                    >
-                      {project.archived ? 'Unarchive' : 'Archive'}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={busyProjectId === project.id}
-                      onClick={() => {
-                        if (
-                          !window.confirm(
-                            'Delete this project and hide all of its tasks?',
-                          )
-                        ) {
-                          return;
-                        }
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Card>
 
-                        void deleteProject(project.id).catch((error) => {
-                          setLocalError(
-                            error instanceof Error
-                              ? error.message
-                              : 'Project delete failed.',
-                          );
-                        });
-                      }}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </Card>
+          <Card tone="muted">
+            <div className="section-heading">
+              <div>
+                <p className="section-heading__eyebrow">Deleted items</p>
+                <h3>削除済みプロジェクト</h3>
+              </div>
+              <span className="pill">{deletedProjects.length}件</span>
+            </div>
 
-      <Card tone="muted">
-        <div className="section-heading">
-          <div>
-            <p className="section-heading__eyebrow">Deleted items</p>
-            <h3>Restore projects</h3>
-          </div>
-          <span className="pill">{deletedProjects.length} deleted</span>
+            {deletedProjects.length === 0 ? (
+              <div className="empty-state">
+                <h3>削除済みプロジェクトはありません</h3>
+                <p className="muted-copy">
+                  削除したプロジェクトはここに残り、必要なときに復元できます。
+                </p>
+              </div>
+            ) : (
+              <div className="workspace-list">
+                {deletedProjects.map((project) => (
+                  <Card key={project.id}>
+                    <div className="workspace-row">
+                      <div className="workspace-row__main">
+                        <h3>{project.name}</h3>
+                        <p className="workspace-row__meta">
+                          削除日 {formatDateLabel(project.deletedAt)}
+                        </p>
+                      </div>
+                      <div className="button-row workspace-row__actions">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={busyProjectId === project.id}
+                          onClick={() =>
+                            void restoreProject(project.id).catch((error) => {
+                              setLocalError(
+                                error instanceof Error
+                                  ? error.message
+                                  : 'プロジェクトの復元に失敗しました。',
+                              );
+                            })
+                          }
+                        >
+                          復元
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Card>
         </div>
-
-        {deletedProjects.length === 0 ? (
-          <div className="empty-state">
-            <h3>No deleted projects</h3>
-            <p className="muted-copy">
-              Deleted projects will appear here until they are restored.
-            </p>
-          </div>
-        ) : (
-          <div className="stack">
-            {deletedProjects.map((project) => (
-              <Card key={project.id}>
-                <div className="stack stack--tight">
-                  <div className="section-heading section-heading--compact">
-                    <div>
-                      <h3>{project.name}</h3>
-                      <p className="muted-copy">
-                        Deleted {project.deletedAt?.slice(0, 10)}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={busyProjectId === project.id}
-                      onClick={() =>
-                        void restoreProject(project.id).catch((error) => {
-                          setLocalError(
-                            error instanceof Error
-                              ? error.message
-                              : 'Project restore failed.',
-                          );
-                        })
-                      }
-                    >
-                      Restore
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </Card>
+      </div>
     </div>
   );
 }

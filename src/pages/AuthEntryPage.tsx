@@ -7,9 +7,9 @@ export function AuthEntryPage() {
   return (
     <Frame>
       <AppHeader
-        title="Welcome"
-        subtitle="Google sign-in required"
-        badgeLabel="Signed out"
+        title="ようこそ"
+        subtitle="Google アカウントでログインしてください"
+        badgeLabel="未ログイン"
       />
       <ConnectivityBanner />
       <main className="app-shell__content">

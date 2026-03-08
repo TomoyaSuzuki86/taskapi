@@ -59,11 +59,11 @@ describe('ProjectDetailPage', () => {
       </TestAuthProvider>,
     );
 
-    await user.type(screen.getByLabelText('Task title'), 'Write tests');
-    await user.type(screen.getByLabelText('Notes'), 'Cover create flow');
-    await user.selectOptions(screen.getByLabelText('Status'), 'doing');
-    await user.type(screen.getByLabelText('Due date'), '2026-03-20');
-    await user.click(screen.getByRole('button', { name: 'Create task' }));
+    await user.type(screen.getByLabelText('タスク名'), 'Write tests');
+    await user.type(screen.getByLabelText('メモ'), 'Cover create flow');
+    await user.selectOptions(screen.getByLabelText('ステータス'), 'doing');
+    await user.type(screen.getByLabelText('期限'), '2026-03-20');
+    await user.click(screen.getByRole('button', { name: 'タスクを追加' }));
 
     await waitFor(() => {
       expect(createTask).toHaveBeenCalledWith('user-1', 'proj-1', {
@@ -127,7 +127,7 @@ describe('ProjectDetailPage', () => {
       </TestAuthProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Restore' }));
+    await user.click(screen.getByRole('button', { name: '復元' }));
 
     await waitFor(() => {
       expect(restoreTask).toHaveBeenCalledWith(

@@ -4,24 +4,19 @@ import { AppNav } from '@/components/layout/AppNav';
 import { Frame } from '@/components/layout/Frame';
 import { ConnectivityBanner } from '@/components/feedback/ConnectivityBanner';
 import { Button } from '@/components/ui/Button';
+import { resolveShellRouteTitle } from '@/app/route-meta';
 import { useAuth } from '@/features/auth/useAuth';
-
-const routeTitles: Record<string, string> = {
-  '/': 'Home',
-  '/history': 'History',
-  '/settings': 'Settings',
-};
 
 export function AppShell() {
   const location = useLocation();
   const { activeAction, signOut, user } = useAuth();
-  const title = routeTitles[location.pathname] ?? 'Project';
+  const title = resolveShellRouteTitle(location.pathname);
 
   return (
     <Frame>
       <AppHeader
         title={title}
-        subtitle={user?.email ?? 'Signed in with Google'}
+        subtitle={user?.email ?? 'Google アカウントで利用中'}
         action={
           <Button
             type="button"
@@ -29,7 +24,7 @@ export function AppShell() {
             onClick={() => void signOut()}
             disabled={activeAction === 'sign_out'}
           >
-            {activeAction === 'sign_out' ? 'Signing out...' : 'Sign out'}
+            {activeAction === 'sign_out' ? 'ログアウト中...' : 'ログアウト'}
           </Button>
         }
       />

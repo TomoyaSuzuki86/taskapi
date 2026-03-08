@@ -2,6 +2,11 @@ import { Card } from '@/components/ui/Card';
 import { PageSkeleton } from '@/components/skeleton/PageSkeleton';
 import { useAuth } from '@/features/auth/useAuth';
 import { useHistory } from '@/features/history/useHistory';
+import {
+  formatDateTimeLabel,
+  formatHistoryActionLabel,
+  formatHistoryEntityLabel,
+} from '@/lib/ui/display';
 
 export function HistoryPage() {
   const { user } = useAuth();
@@ -11,10 +16,9 @@ export function HistoryPage() {
     <div className="stack stack--page">
       <Card>
         <p className="section-heading__eyebrow">Recent activity</p>
-        <h2>History</h2>
+        <h2>更新履歴</h2>
         <p className="muted-copy">
-          Recent project and task actions are shown in reverse chronological
-          order.
+          プロジェクトとタスクの変更を新しい順に確認できます。削除や復元もこの一覧から追跡できます。
         </p>
       </Card>
 
@@ -25,29 +29,30 @@ export function HistoryPage() {
           <p className="muted-copy">{errorMessage}</p>
         ) : entries.length === 0 ? (
           <div className="empty-state">
-            <h3>No history yet</h3>
+            <h3>まだ履歴がありません</h3>
             <p className="muted-copy">
-              Project and task actions will appear here once you start using the
-              app.
+              プロジェクトやタスクを操作すると、ここに履歴が表示されます。
             </p>
           </div>
         ) : (
-          <div className="stack">
+          <div className="workspace-list">
             {entries.map((entry) => (
               <Card key={entry.id}>
-                <div className="stack stack--tight">
-                  <div className="section-heading section-heading--compact">
-                    <div>
-                      <p className="section-heading__eyebrow">
-                        {entry.entityType}
-                      </p>
-                      <h3>{entry.title}</h3>
-                    </div>
-                    <span className="pill">{entry.action}</span>
+                <div className="workspace-row">
+                  <div className="workspace-row__main">
+                    <p className="section-heading__eyebrow">
+                      {formatHistoryEntityLabel(entry.entityType)}
+                    </p>
+                    <h3>{entry.title}</h3>
+                    <p className="workspace-row__meta">
+                      {formatDateTimeLabel(entry.createdAt)}
+                    </p>
                   </div>
-                  <p className="muted-copy">
-                    {new Date(entry.createdAt).toLocaleString()}
-                  </p>
+                  <div className="button-row workspace-row__actions">
+                    <span className="pill">
+                      {formatHistoryActionLabel(entry.action)}
+                    </span>
+                  </div>
                 </div>
               </Card>
             ))}

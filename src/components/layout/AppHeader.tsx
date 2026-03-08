@@ -16,7 +16,7 @@ export function AppHeader({
   return (
     <header className="app-header">
       <div>
-        <p className="app-header__eyebrow">taskapi</p>
+        <p className="app-header__eyebrow">タスカピ</p>
         <h1>{title}</h1>
         {subtitle ? <p className="app-header__subtitle">{subtitle}</p> : null}
       </div>

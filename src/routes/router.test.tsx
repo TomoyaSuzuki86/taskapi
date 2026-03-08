@@ -46,11 +46,11 @@ const unauthenticatedValue: AuthContextValue = {
 
 describe('auth routes', () => {
   it.each([
-    ['/', 'Your workspace'],
+    ['/', '進行中のプロジェクト'],
     ['/projects/sample-project', 'sample-project'],
-    ['/history', 'Recent activity'],
-    ['/settings', 'Session settings'],
-    ['/missing', 'Route not found'],
+    ['/history', '更新履歴'],
+    ['/settings', '利用中のアカウント'],
+    ['/missing', 'ページが見つかりません'],
   ] as const)('renders %s', (entry, expectedText) => {
     const dataServices = createTestDataServices({
       projects: [
@@ -137,10 +137,10 @@ describe('auth routes', () => {
     );
 
     expect(
-      screen.getByRole('heading', { name: 'Welcome' }),
+      screen.getByRole('heading', { name: 'ようこそ' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Continue with Google' }),
+      screen.getByRole('button', { name: 'Googleでログイン' }),
     ).toBeInTheDocument();
   });
 });

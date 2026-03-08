@@ -11,22 +11,22 @@ export function AuthErrorScreen({ message }: AuthErrorScreenProps) {
   return (
     <Frame>
       <AppHeader
-        title="Auth error"
-        subtitle="Firebase setup needs attention"
-        badgeLabel="Blocked"
+        title="認証エラー"
+        subtitle="Firebase 設定を確認してください"
+        badgeLabel="停止中"
       />
       <main className="app-shell__content">
         <div className="stack stack--page">
           <Card>
             <p className="section-heading__eyebrow">Authentication</p>
-            <h2>Session bootstrap could not start</h2>
+            <h2>ログイン状態の確認を開始できませんでした</h2>
             <p className="muted-copy">{message}</p>
             <p className="muted-copy">
-              Check the Firebase environment variables and Authentication
-              provider settings, then reload the app.
+              Firebase の環境変数と Authentication
+              の設定を確認してから、アプリを再読み込みしてください。
             </p>
             <Link className="text-link" to="/">
-              Retry after configuration
+              設定後に再試行
             </Link>
           </Card>
         </div>

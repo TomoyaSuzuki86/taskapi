@@ -72,28 +72,28 @@ export async function signOutFromGoogle() {
 
 export function getAuthErrorMessage(error: unknown) {
   if (!(error instanceof Error)) {
-    return 'Authentication failed for an unknown reason.';
+    return '認証に失敗しました。原因を特定できませんでした。';
   }
 
   const code = 'code' in error ? String(error.code) : '';
 
   if (code === 'auth/popup-closed-by-user') {
-    return 'Google sign-in was canceled before completion.';
+    return 'Google ログインが完了前にキャンセルされました。';
   }
 
   if (code === 'auth/network-request-failed') {
-    return 'Network connection failed during sign-in. Check connectivity and try again.';
+    return 'ログイン中に通信に失敗しました。ネットワークを確認して再試行してください。';
   }
 
   if (code === 'auth/unauthorized-domain') {
-    return 'This domain is not authorized for Firebase Authentication. Check Firebase Auth settings.';
+    return 'このドメインは Firebase Authentication で許可されていません。設定を確認してください。';
   }
 
   if (code === 'auth/operation-not-allowed') {
-    return 'Google sign-in is not enabled for this Firebase project.';
+    return 'この Firebase プロジェクトでは Google ログインが有効になっていません。';
   }
 
-  return error.message || 'Authentication failed. Please try again.';
+  return error.message || '認証に失敗しました。もう一度お試しください。';
 }
 
 function mapFirebaseUser(user: User | null): TaskapiUser | null {

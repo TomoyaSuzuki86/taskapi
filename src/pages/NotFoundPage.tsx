@@ -6,12 +6,12 @@ export function NotFoundPage() {
     <div className="stack stack--page">
       <Card>
         <p className="section-heading__eyebrow">404</p>
-        <h2>Route not found</h2>
+        <h2>ページが見つかりません</h2>
         <p className="muted-copy">
-          The requested screen does not exist in the bootstrap shell.
+          指定された画面は存在しないか、利用できなくなっています。
         </p>
         <Link className="text-link" to="/">
-          Return home
+          ホームへ戻る
         </Link>
       </Card>
     </div>
