@@ -1,0 +1,26 @@
+[features]
+multi_agent = true
+
+[agents]
+max_threads = 6
+max_depth = 1
+
+[agents.code_quality_reviewer]
+description = "Review code quality, architecture consistency, naming, type safety, error handling, test quality, and maintainability. Do not judge product scope unless it affects code quality."
+config_file = "agents/code-quality-reviewer.toml"
+
+[agents.requirement_reviewer]
+description = "Review whether the change satisfies taskapi requirements and stays within scope. Check single-user assumptions, no-assignee rule, login persistence, SPA behavior, skeleton loading, Firebase/Firestore direction, and history/restore expectations."
+config_file = "agents/requirement-reviewer.toml"
+
+[agents.debugger]
+description = "Run the app, inspect actual behavior, reproduce issues, and verify screen flows. Prefer observed runtime behavior over static guesses."
+config_file = "agents/debugger.toml"
+
+[agents.triage_judge]
+description = "Collect findings from reviewers and debugger, classify them into required-before-merge, can-defer, or reject-recommendation, and remove low-value churn."
+config_file = "agents/triage-judge.toml"
+
+[agents.fix_planner]
+description = "Convert accepted findings into the smallest safe repair plan with clear ordering, regression awareness, and retest scope."
+config_file = "agents/fix-planner.toml"
