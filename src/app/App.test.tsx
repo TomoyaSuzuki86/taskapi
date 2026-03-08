@@ -5,6 +5,8 @@ import { AppShell } from '@/app/AppShell';
 import type { AuthContextValue } from '@/features/auth/auth-context';
 import { BootstrapHomePage } from '@/pages/BootstrapHomePage';
 import { TestAuthProvider } from '@/test/TestAuthProvider';
+import { createTestDataServices } from '@/test/createTestDataServices';
+import { TestDataServicesProvider } from '@/test/TestDataServicesProvider';
 
 const authenticatedValue: AuthContextValue = {
   status: 'authenticated',
@@ -23,6 +25,7 @@ const authenticatedValue: AuthContextValue = {
 
 describe('AppShell', () => {
   it('renders the application chrome', () => {
+    const dataServices = createTestDataServices();
     const router = createMemoryRouter(
       [
         {
@@ -36,7 +39,9 @@ describe('AppShell', () => {
 
     render(
       <TestAuthProvider value={authenticatedValue}>
-        <RouterProvider router={router} />
+        <TestDataServicesProvider value={dataServices}>
+          <RouterProvider router={router} />
+        </TestDataServicesProvider>
       </TestAuthProvider>,
     );
 
@@ -47,5 +52,6 @@ describe('AppShell', () => {
     expect(
       screen.getByRole('button', { name: 'Sign out' }),
     ).toBeInTheDocument();
+    expect(screen.getByText('Your workspace')).toBeInTheDocument();
   });
 });

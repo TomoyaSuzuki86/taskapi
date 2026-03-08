@@ -1,3 +1,9 @@
-# Projects Feature Placeholder
+# Projects Feature
 
-Project CRUD is intentionally deferred until the project management phase.
+This directory now contains Firestore-backed project list and project-detail hooks.
+
+- project list subscription
+- single project subscription
+- create/update/delete project flows
+
+History and restore remain out of scope here.

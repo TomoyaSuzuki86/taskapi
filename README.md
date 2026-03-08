@@ -1,6 +1,6 @@
 # taskapi
 
-Auth-session foundation for `taskapi`, a single-user task management SPA designed for Firebase-backed Google sign-in, persisted session handling, Firestore persistence, history retention, restore, and future MCP integration.
+Firestore CRUD foundation for `taskapi`, a single-user task management SPA with Firebase-backed Google sign-in, persisted session handling, and owner-scoped project/task data.
 
 ## Governing docs
 
@@ -15,17 +15,19 @@ Implemented in this phase:
 - React + TypeScript + Vite SPA scaffold
 - React Router shell with authenticated and unauthenticated route handling
 - Mobile-first layout primitives
-- Skeleton components for auth bootstrap loading states
+- Skeleton components for auth bootstrap and Firestore-backed loading states
 - Firebase client initialization boundary and environment contract
 - Firebase Authentication with Google sign-in
 - persisted auth session handling and logout
-- domain type scaffolding for user, project, task, and history
+- Firestore-backed project CRUD under `users/{uid}/projects/{projectId}`
+- Firestore-backed task CRUD under `users/{uid}/projects/{projectId}/tasks/{taskId}`
+- centralized project/task repositories and data-service wiring
+- minimal Firestore security rules for owner-only access
+- domain types for user, project, task, and history
 - ESLint, Prettier, and Vitest baseline
 
 Explicitly deferred:
 
-- Firestore reads and writes beyond auth session handling
-- project/task CRUD
 - history persistence and restore
 - server-side write APIs
 - PWA finalization
@@ -47,6 +49,7 @@ src/
   types/        Domain and environment typings
 server/         Placeholder server boundaries for later phases
 docs/           Requirements and implementation plans
+firestore.rules Owner-only Firestore access rules for this phase
 ```
 
 ## Environment variables
@@ -74,6 +77,17 @@ Required Firebase console configuration:
 
 If Google sign-in fails with an unauthorized-domain error, check the authorized domains configuration first.
 
+## Firestore setup
+
+This phase expects Cloud Firestore to be enabled for the same Firebase project.
+
+Required data paths:
+
+- `users/{uid}/projects/{projectId}`
+- `users/{uid}/projects/{projectId}/tasks/{taskId}`
+
+Local and deployed rules should use [firestore.rules](/C:/Users/tomo1/Documents/taskapi/firestore.rules).
+
 ## Scripts
 
 ```bash
@@ -91,14 +105,15 @@ pnpm build
 2. Copy `.env.example` to `.env.local`.
 3. Ensure Firebase Authentication -> Google provider is enabled.
 4. Ensure your local dev host is authorized in Firebase Authentication.
-5. Run `pnpm dev`.
-6. Open the local Vite URL in a browser.
+5. Ensure Cloud Firestore is enabled for the project.
+6. Run `pnpm dev`.
+7. Open the local Vite URL in a browser.
 
 ## Next phase
 
-The next recommended phase is the Firestore data model and data access foundation, which should add:
+The next recommended phase is history and restore, which should add:
 
-- collection/document structure
-- owner-scoped data conventions
-- repository boundaries for Firestore reads
-- history document shape and restore-safe design
+- history document writes for create/update/delete
+- restore-safe revision browsing
+- restore operations that preserve project/task relationships
+- UI for browsing and restoring prior revisions

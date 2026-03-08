@@ -7,9 +7,9 @@ import {
 } from '@/features/auth/components/AuthRouteGate';
 import { AuthEntryPage } from '@/pages/AuthEntryPage';
 import { BootstrapHomePage } from '@/pages/BootstrapHomePage';
-import { HistoryPlaceholderPage } from '@/pages/HistoryPlaceholderPage';
+import { HistoryPage } from '@/pages/HistoryPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
-import { ProjectDetailPlaceholderPage } from '@/pages/ProjectDetailPlaceholderPage';
+import { ProjectDetailPage } from '@/pages/ProjectDetailPage';
 import { SettingsPlaceholderPage } from '@/pages/SettingsPlaceholderPage';
 
 export const router = createBrowserRouter([
@@ -38,11 +38,11 @@ export const router = createBrowserRouter([
               },
               {
                 path: 'projects/:projectId',
-                element: <ProjectDetailPlaceholderPage />,
+                element: <ProjectDetailPage />,
               },
               {
                 path: 'history',
-                element: <HistoryPlaceholderPage />,
+                element: <HistoryPage />,
               },
               {
                 path: 'settings',

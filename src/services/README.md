@@ -1,7 +1,8 @@
 # Client Service Boundaries
 
-Bootstrap keeps service definitions as interfaces only.
+This layer now owns Firestore-backed project and task repositories.
 
-- Read services can later subscribe to Firestore-backed data.
-- Write services should be routed through controlled server logic once history integrity matters.
-- No assignee or collaboration concepts belong in these contracts.
+- page components consume hooks or data-service modules, not Firestore directly
+- repositories keep all document paths under `users/{uid}/...`
+- complex history-sensitive writes are still deferred to a later server-controlled phase
+- no assignee or collaboration concepts belong in these contracts

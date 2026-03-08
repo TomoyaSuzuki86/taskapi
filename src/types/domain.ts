@@ -11,42 +11,68 @@ export type Project = {
   id: EntityId;
   ownerUid: string;
   name: string;
-  description: string;
+  description: string | null;
+  archived: boolean;
+  deletedAt: IsoTimestamp | null;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
-  deleted: boolean;
-  version: number;
 };
 
-export type TaskStatus = 'todo' | 'in_progress' | 'done';
+export type ProjectCreateInput = {
+  name: string;
+  description: string;
+};
+
+export type ProjectUpdateInput = {
+  name: string;
+  description: string;
+  archived: boolean;
+};
+
+export type TaskStatus = 'todo' | 'doing' | 'done';
 
 export type Task = {
   id: EntityId;
   projectId: EntityId;
   ownerUid: string;
   title: string;
-  description: string;
+  notes: string | null;
   status: TaskStatus;
   dueDate: IsoTimestamp | null;
+  completedAt: IsoTimestamp | null;
+  deletedAt: IsoTimestamp | null;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
-  deleted: boolean;
-  version: number;
 };
 
-export type HistoryAction = 'create' | 'update' | 'delete' | 'restore';
+export type TaskCreateInput = {
+  title: string;
+  notes: string;
+  status: TaskStatus;
+  dueDate: string;
+};
+
+export type TaskUpdateInput = {
+  title: string;
+  notes: string;
+  status: TaskStatus;
+  dueDate: string;
+};
+
+export type HistoryAction =
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'restore'
+  | 'status_change';
 export type HistoryEntityType = 'project' | 'task';
 
 export type HistoryEntry = {
   id: EntityId;
-  ownerUid: string;
   entityType: HistoryEntityType;
   entityId: EntityId;
   projectId: EntityId | null;
   action: HistoryAction;
-  before: Record<string, unknown> | null;
-  after: Record<string, unknown> | null;
-  revision: number;
-  changedAt: IsoTimestamp;
-  changedBy: string;
+  title: string;
+  createdAt: IsoTimestamp;
 };

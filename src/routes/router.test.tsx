@@ -10,11 +10,13 @@ import {
 } from '@/features/auth/components/AuthRouteGate';
 import { AuthEntryPage } from '@/pages/AuthEntryPage';
 import { BootstrapHomePage } from '@/pages/BootstrapHomePage';
-import { HistoryPlaceholderPage } from '@/pages/HistoryPlaceholderPage';
+import { HistoryPage } from '@/pages/HistoryPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
-import { ProjectDetailPlaceholderPage } from '@/pages/ProjectDetailPlaceholderPage';
+import { ProjectDetailPage } from '@/pages/ProjectDetailPage';
 import { SettingsPlaceholderPage } from '@/pages/SettingsPlaceholderPage';
 import { TestAuthProvider } from '@/test/TestAuthProvider';
+import { createTestDataServices } from '@/test/createTestDataServices';
+import { TestDataServicesProvider } from '@/test/TestDataServicesProvider';
 
 const authenticatedValue: AuthContextValue = {
   status: 'authenticated',
@@ -44,12 +46,30 @@ const unauthenticatedValue: AuthContextValue = {
 
 describe('auth routes', () => {
   it.each([
-    ['/', 'Session active'],
+    ['/', 'Your workspace'],
     ['/projects/sample-project', 'sample-project'],
-    ['/history', 'History shell'],
+    ['/history', 'Recent activity'],
     ['/settings', 'Session settings'],
     ['/missing', 'Route not found'],
   ] as const)('renders %s', (entry, expectedText) => {
+    const dataServices = createTestDataServices({
+      projects: [
+        {
+          id: 'sample-project',
+          ownerUid: 'user-1',
+          name: 'sample-project',
+          description: 'Example project',
+          archived: false,
+          deletedAt: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+      tasksByProjectId: {
+        'sample-project': [],
+      },
+      historyEntries: [],
+    });
     const router = createMemoryRouter(
       [
         {
@@ -59,9 +79,9 @@ describe('auth routes', () => {
             { index: true, element: <BootstrapHomePage /> },
             {
               path: 'projects/:projectId',
-              element: <ProjectDetailPlaceholderPage />,
+              element: <ProjectDetailPage />,
             },
-            { path: 'history', element: <HistoryPlaceholderPage /> },
+            { path: 'history', element: <HistoryPage /> },
             { path: 'settings', element: <SettingsPlaceholderPage /> },
             { path: '*', element: <NotFoundPage /> },
           ],
@@ -72,7 +92,9 @@ describe('auth routes', () => {
 
     render(
       <TestAuthProvider value={authenticatedValue}>
-        <RouterProvider router={router} />
+        <TestDataServicesProvider value={dataServices}>
+          <RouterProvider router={router} />
+        </TestDataServicesProvider>
       </TestAuthProvider>,
     );
 
@@ -80,6 +102,7 @@ describe('auth routes', () => {
   });
 
   it('redirects signed-out users to login for protected routes', () => {
+    const dataServices = createTestDataServices();
     const router = createMemoryRouter(
       [
         {
@@ -95,9 +118,7 @@ describe('auth routes', () => {
                 {
                   path: '/',
                   element: <AppShell />,
-                  children: [
-                    { path: 'history', element: <HistoryPlaceholderPage /> },
-                  ],
+                  children: [{ path: 'history', element: <HistoryPage /> }],
                 },
               ],
             },
@@ -109,7 +130,9 @@ describe('auth routes', () => {
 
     render(
       <TestAuthProvider value={unauthenticatedValue}>
-        <RouterProvider router={router} />
+        <TestDataServicesProvider value={dataServices}>
+          <RouterProvider router={router} />
+        </TestDataServicesProvider>
       </TestAuthProvider>,
     );
 

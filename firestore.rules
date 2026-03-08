@@ -1,0 +1,129 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function projectFieldsAreValid(uid, projectId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'ownerUid',
+          'name',
+          'description',
+          'archived',
+          'deletedAt',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        request.resource.data.id == projectId &&
+        request.resource.data.ownerUid == uid &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        (
+          request.resource.data.description == null ||
+          request.resource.data.description is string
+        ) &&
+        request.resource.data.archived is bool &&
+        (
+          request.resource.data.deletedAt == null ||
+          request.resource.data.deletedAt is timestamp
+        ) &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.updatedAt is timestamp;
+    }
+
+    function taskFieldsAreValid(uid, projectId, taskId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'ownerUid',
+          'projectId',
+          'title',
+          'notes',
+          'status',
+          'dueDate',
+          'completedAt',
+          'deletedAt',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        request.resource.data.id == taskId &&
+        request.resource.data.ownerUid == uid &&
+        request.resource.data.projectId == projectId &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        (
+          request.resource.data.notes == null ||
+          request.resource.data.notes is string
+        ) &&
+        request.resource.data.status in ['todo', 'doing', 'done'] &&
+        (
+          request.resource.data.dueDate == null ||
+          request.resource.data.dueDate is timestamp
+        ) &&
+        (
+          request.resource.data.completedAt == null ||
+          request.resource.data.completedAt is timestamp
+        ) &&
+        (
+          request.resource.data.deletedAt == null ||
+          request.resource.data.deletedAt is timestamp
+        ) &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.updatedAt is timestamp;
+    }
+
+    function historyFieldsAreValid(historyId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'entityType',
+          'entityId',
+          'projectId',
+          'action',
+          'title',
+          'createdAt'
+        ]) &&
+        request.resource.data.id == historyId &&
+        request.resource.data.entityType in ['project', 'task'] &&
+        request.resource.data.entityId is string &&
+        request.resource.data.entityId.size() > 0 &&
+        (
+          request.resource.data.projectId == null ||
+          request.resource.data.projectId is string
+        ) &&
+        request.resource.data.action in [
+          'create',
+          'update',
+          'delete',
+          'restore',
+          'status_change'
+        ] &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        request.resource.data.createdAt is timestamp;
+    }
+
+    match /users/{uid}/projects/{projectId} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && projectFieldsAreValid(uid, projectId);
+      allow delete: if false;
+
+      match /tasks/{taskId} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && taskFieldsAreValid(uid, projectId, taskId);
+        allow delete: if false;
+      }
+    }
+
+    match /users/{uid}/history/{historyId} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && historyFieldsAreValid(historyId);
+      allow update, delete: if false;
+    }
+  }
+}
