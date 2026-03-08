@@ -1,25 +1,27 @@
-import { randomUUID } from "node:crypto";
-import { initializeApp } from "firebase-admin/app";
+import { randomUUID } from 'node:crypto';
+import { initializeApp } from 'firebase-admin/app';
 import {
   FieldValue,
   Timestamp,
   getFirestore,
   type QueryDocumentSnapshot,
   type Transaction,
-} from "firebase-admin/firestore";
-import { onCall } from "firebase-functions/v2/https";
-import { setGlobalOptions } from "firebase-functions/v2";
+} from 'firebase-admin/firestore';
+import { onCall } from 'firebase-functions/v2/https';
+import { setGlobalOptions } from 'firebase-functions/v2';
 
 initializeApp();
-setGlobalOptions({ region: process.env.TASKAPI_FUNCTIONS_REGION || "us-central1" });
+setGlobalOptions({
+  region: process.env.TASKAPI_FUNCTIONS_REGION || 'us-central1',
+});
 
-type TaskStatus = "todo" | "doing" | "done";
+type TaskStatus = 'todo' | 'doing' | 'done';
 type MutationErrorCode =
-  | "unauthenticated"
-  | "invalid-argument"
-  | "not-found"
-  | "failed-precondition"
-  | "internal";
+  | 'unauthenticated'
+  | 'invalid-argument'
+  | 'not-found'
+  | 'failed-precondition'
+  | 'internal';
 
 type MutationResult<T> =
   | {
@@ -95,25 +97,24 @@ class MutationError extends Error {
 
   constructor(code: MutationErrorCode, message: string) {
     super(message);
-    this.name = "MutationError";
+    this.name = 'MutationError';
     this.code = code;
   }
 }
 
 const firestore = getFirestore();
 
-export const createProject = onCall(async (request): Promise<MutationResult<{ projectId: string }>> => {
-  const uid = requireUid(request.auth?.uid);
+export const createProject = onCall(
+  async (request): Promise<MutationResult<{ projectId: string }>> => {
+    const uid = requireUid(request.auth?.uid);
 
-  try {
-    const input = validateCreateProjectInput(request.data);
-    const projectId = randomUUID();
-    const historyId = randomUUID();
+    try {
+      const input = validateCreateProjectInput(request.data);
+      const projectId = randomUUID();
+      const historyId = randomUUID();
 
-    await firestore.runTransaction(async (transaction) => {
-      transaction.set(
-        firestore.doc(projectPath(uid, projectId)),
-        {
+      await firestore.runTransaction(async (transaction) => {
+        transaction.set(firestore.doc(projectPath(uid, projectId)), {
           id: projectId,
           ownerUid: uid,
           name: input.name.trim(),
@@ -122,138 +123,189 @@ export const createProject = onCall(async (request): Promise<MutationResult<{ pr
           deletedAt: null,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-        },
-      );
-      transaction.set(
-        firestore.doc(historyPath(uid, historyId)),
-        buildHistoryRecord(historyId, "project", projectId, projectId, "create", input.name.trim()),
-      );
-    });
-
-    return success({ projectId });
-  } catch (error) {
-    return failure(error);
-  }
-});
-
-export const updateProject = onCall(async (request): Promise<MutationResult<MutationAcknowledgement>> => {
-  const uid = requireUid(request.auth?.uid);
-
-  try {
-    const input = validateUpdateProjectInput(request.data);
-
-    await firestore.runTransaction(async (transaction) => {
-      const projectRef = firestore.doc(projectPath(uid, input.projectId));
-      const project = readProjectSnapshot(await transaction.get(projectRef), input.projectId);
-      const historyId = randomUUID();
-
-      transaction.update(projectRef, {
-        name: input.name.trim(),
-        description: emptyToNull(input.description),
-        archived: input.archived,
-        updatedAt: serverTimestamp(),
+        });
+        transaction.set(
+          firestore.doc(historyPath(uid, historyId)),
+          buildHistoryRecord(
+            historyId,
+            'project',
+            projectId,
+            projectId,
+            'create',
+            input.name.trim(),
+          ),
+        );
       });
-      transaction.set(
-        firestore.doc(historyPath(uid, historyId)),
-        buildHistoryRecord(historyId, "project", project.id, project.id, "update", input.name.trim()),
-      );
-    });
 
-    return success({ acknowledged: true });
-  } catch (error) {
-    return failure(error);
-  }
-});
+      return success({ projectId });
+    } catch (error) {
+      return failure(error);
+    }
+  },
+);
 
-export const deleteProject = onCall(async (request): Promise<MutationResult<MutationAcknowledgement>> => {
-  const uid = requireUid(request.auth?.uid);
+export const updateProject = onCall(
+  async (request): Promise<MutationResult<MutationAcknowledgement>> => {
+    const uid = requireUid(request.auth?.uid);
 
-  try {
-    const input = validateProjectMutationInput(request.data);
+    try {
+      const input = validateUpdateProjectInput(request.data);
 
-    await firestore.runTransaction(async (transaction) => {
-      const projectRef = firestore.doc(projectPath(uid, input.projectId));
-      const project = readProjectSnapshot(await transaction.get(projectRef), input.projectId);
-      const taskDocuments = await transaction.get(firestore.collection(tasksPath(uid, input.projectId)));
+      await firestore.runTransaction(async (transaction) => {
+        const projectRef = firestore.doc(projectPath(uid, input.projectId));
+        const project = readProjectSnapshot(
+          await transaction.get(projectRef),
+          input.projectId,
+        );
+        const historyId = randomUUID();
 
-      taskDocuments.docs.forEach((taskDocument) => {
-        const task = readTaskRecord(taskDocument, taskDocument.id);
+        transaction.update(projectRef, {
+          name: input.name.trim(),
+          description: emptyToNull(input.description),
+          archived: input.archived,
+          updatedAt: serverTimestamp(),
+        });
+        transaction.set(
+          firestore.doc(historyPath(uid, historyId)),
+          buildHistoryRecord(
+            historyId,
+            'project',
+            project.id,
+            project.id,
+            'update',
+            input.name.trim(),
+          ),
+        );
+      });
 
-        if (task.deletedAt) {
-          return;
-        }
+      return success({ acknowledged: true });
+    } catch (error) {
+      return failure(error);
+    }
+  },
+);
 
-        transaction.update(taskDocument.ref, {
+export const deleteProject = onCall(
+  async (request): Promise<MutationResult<MutationAcknowledgement>> => {
+    const uid = requireUid(request.auth?.uid);
+
+    try {
+      const input = validateProjectMutationInput(request.data);
+
+      await firestore.runTransaction(async (transaction) => {
+        const projectRef = firestore.doc(projectPath(uid, input.projectId));
+        const project = readProjectSnapshot(
+          await transaction.get(projectRef),
+          input.projectId,
+        );
+        const taskDocuments = await transaction.get(
+          firestore.collection(tasksPath(uid, input.projectId)),
+        );
+
+        taskDocuments.docs.forEach((taskDocument) => {
+          const task = readTaskRecord(taskDocument, taskDocument.id);
+
+          if (task.deletedAt) {
+            return;
+          }
+
+          transaction.update(taskDocument.ref, {
+            deletedAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+
+          const taskHistoryId = randomUUID();
+          transaction.set(
+            firestore.doc(historyPath(uid, taskHistoryId)),
+            buildHistoryRecord(
+              taskHistoryId,
+              'task',
+              task.id,
+              input.projectId,
+              'delete',
+              task.title,
+            ),
+          );
+        });
+
+        transaction.update(projectRef, {
           deletedAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
 
-        const taskHistoryId = randomUUID();
+        const projectHistoryId = randomUUID();
         transaction.set(
-          firestore.doc(historyPath(uid, taskHistoryId)),
-          buildHistoryRecord(taskHistoryId, "task", task.id, input.projectId, "delete", task.title),
+          firestore.doc(historyPath(uid, projectHistoryId)),
+          buildHistoryRecord(
+            projectHistoryId,
+            'project',
+            project.id,
+            project.id,
+            'delete',
+            project.name,
+          ),
         );
       });
 
-      transaction.update(projectRef, {
-        deletedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+      return success({ acknowledged: true });
+    } catch (error) {
+      return failure(error);
+    }
+  },
+);
+
+export const restoreProject = onCall(
+  async (request): Promise<MutationResult<MutationAcknowledgement>> => {
+    const uid = requireUid(request.auth?.uid);
+
+    try {
+      const input = validateProjectMutationInput(request.data);
+
+      await firestore.runTransaction(async (transaction) => {
+        const projectRef = firestore.doc(projectPath(uid, input.projectId));
+        const project = readProjectSnapshot(
+          await transaction.get(projectRef),
+          input.projectId,
+        );
+        const historyId = randomUUID();
+
+        transaction.update(projectRef, {
+          deletedAt: null,
+          updatedAt: serverTimestamp(),
+        });
+        transaction.set(
+          firestore.doc(historyPath(uid, historyId)),
+          buildHistoryRecord(
+            historyId,
+            'project',
+            project.id,
+            project.id,
+            'restore',
+            project.name,
+          ),
+        );
       });
 
-      const projectHistoryId = randomUUID();
-      transaction.set(
-        firestore.doc(historyPath(uid, projectHistoryId)),
-        buildHistoryRecord(projectHistoryId, "project", project.id, project.id, "delete", project.name),
-      );
-    });
+      return success({ acknowledged: true });
+    } catch (error) {
+      return failure(error);
+    }
+  },
+);
 
-    return success({ acknowledged: true });
-  } catch (error) {
-    return failure(error);
-  }
-});
+export const createTask = onCall(
+  async (request): Promise<MutationResult<{ taskId: string }>> => {
+    const uid = requireUid(request.auth?.uid);
 
-export const restoreProject = onCall(async (request): Promise<MutationResult<MutationAcknowledgement>> => {
-  const uid = requireUid(request.auth?.uid);
-
-  try {
-    const input = validateProjectMutationInput(request.data);
-
-    await firestore.runTransaction(async (transaction) => {
-      const projectRef = firestore.doc(projectPath(uid, input.projectId));
-      const project = readProjectSnapshot(await transaction.get(projectRef), input.projectId);
+    try {
+      const input = validateCreateTaskInput(request.data);
+      const taskId = randomUUID();
       const historyId = randomUUID();
 
-      transaction.update(projectRef, {
-        deletedAt: null,
-        updatedAt: serverTimestamp(),
-      });
-      transaction.set(
-        firestore.doc(historyPath(uid, historyId)),
-        buildHistoryRecord(historyId, "project", project.id, project.id, "restore", project.name),
-      );
-    });
+      await firestore.runTransaction(async (transaction) => {
+        await assertProjectIsActive(transaction, uid, input.projectId);
 
-    return success({ acknowledged: true });
-  } catch (error) {
-    return failure(error);
-  }
-});
-
-export const createTask = onCall(async (request): Promise<MutationResult<{ taskId: string }>> => {
-  const uid = requireUid(request.auth?.uid);
-
-  try {
-    const input = validateCreateTaskInput(request.data);
-    const taskId = randomUUID();
-    const historyId = randomUUID();
-
-    await firestore.runTransaction(async (transaction) => {
-      await assertProjectIsActive(transaction, uid, input.projectId);
-
-      transaction.set(
-        firestore.doc(taskPath(uid, input.projectId, taskId)),
-        {
+        transaction.set(firestore.doc(taskPath(uid, input.projectId, taskId)), {
           id: taskId,
           ownerUid: uid,
           projectId: input.projectId,
@@ -261,131 +313,183 @@ export const createTask = onCall(async (request): Promise<MutationResult<{ taskI
           notes: emptyToNull(input.notes),
           status: input.status,
           dueDate: dateInputToTimestamp(input.dueDate),
-          completedAt: input.status === "done" ? serverTimestamp() : null,
+          completedAt: input.status === 'done' ? serverTimestamp() : null,
           deletedAt: null,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-        },
-      );
-      transaction.set(
-        firestore.doc(historyPath(uid, historyId)),
-        buildHistoryRecord(historyId, "task", taskId, input.projectId, "create", input.title.trim()),
-      );
-    });
-
-    return success({ taskId });
-  } catch (error) {
-    return failure(error);
-  }
-});
-
-export const updateTask = onCall(async (request): Promise<MutationResult<MutationAcknowledgement>> => {
-  const uid = requireUid(request.auth?.uid);
-
-  try {
-    const input = validateUpdateTaskInput(request.data);
-
-    await firestore.runTransaction(async (transaction) => {
-      await assertProjectIsActive(transaction, uid, input.projectId);
-
-      const taskRef = firestore.doc(taskPath(uid, input.projectId, input.taskId));
-      const task = readTaskSnapshot(await transaction.get(taskRef), input.taskId);
-      const historyId = randomUUID();
-
-      transaction.update(taskRef, {
-        title: input.title.trim(),
-        notes: emptyToNull(input.notes),
-        status: input.status,
-        dueDate: dateInputToTimestamp(input.dueDate),
-        completedAt: nextCompletedAt(task, input.status),
-        updatedAt: serverTimestamp(),
-      });
-      transaction.set(
-        firestore.doc(historyPath(uid, historyId)),
-        buildHistoryRecord(historyId, "task", task.id, input.projectId, "update", input.title.trim()),
-      );
-
-      if (task.status !== input.status) {
-        const statusHistoryId = randomUUID();
+        });
         transaction.set(
-          firestore.doc(historyPath(uid, statusHistoryId)),
+          firestore.doc(historyPath(uid, historyId)),
           buildHistoryRecord(
-            statusHistoryId,
-            "task",
-            task.id,
+            historyId,
+            'task',
+            taskId,
             input.projectId,
-            "status_change",
-            `${input.title.trim()} -> ${input.status}`,
+            'create',
+            input.title.trim(),
           ),
         );
-      }
-    });
-
-    return success({ acknowledged: true });
-  } catch (error) {
-    return failure(error);
-  }
-});
-
-export const deleteTask = onCall(async (request): Promise<MutationResult<MutationAcknowledgement>> => {
-  const uid = requireUid(request.auth?.uid);
-
-  try {
-    const input = validateTaskMutationInput(request.data);
-
-    await firestore.runTransaction(async (transaction) => {
-      const taskRef = firestore.doc(taskPath(uid, input.projectId, input.taskId));
-      const task = readTaskSnapshot(await transaction.get(taskRef), input.taskId);
-      const historyId = randomUUID();
-
-      transaction.update(taskRef, {
-        deletedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
       });
-      transaction.set(
-        firestore.doc(historyPath(uid, historyId)),
-        buildHistoryRecord(historyId, "task", task.id, input.projectId, "delete", task.title),
-      );
-    });
 
-    return success({ acknowledged: true });
-  } catch (error) {
-    return failure(error);
-  }
-});
+      return success({ taskId });
+    } catch (error) {
+      return failure(error);
+    }
+  },
+);
 
-export const restoreTask = onCall(async (request): Promise<MutationResult<MutationAcknowledgement>> => {
-  const uid = requireUid(request.auth?.uid);
+export const updateTask = onCall(
+  async (request): Promise<MutationResult<MutationAcknowledgement>> => {
+    const uid = requireUid(request.auth?.uid);
 
-  try {
-    const input = validateTaskMutationInput(request.data);
+    try {
+      const input = validateUpdateTaskInput(request.data);
 
-    await firestore.runTransaction(async (transaction) => {
-      await assertProjectIsActive(transaction, uid, input.projectId);
+      await firestore.runTransaction(async (transaction) => {
+        await assertProjectIsActive(transaction, uid, input.projectId);
 
-      const taskRef = firestore.doc(taskPath(uid, input.projectId, input.taskId));
-      const task = readTaskSnapshot(await transaction.get(taskRef), input.taskId);
-      const historyId = randomUUID();
+        const taskRef = firestore.doc(
+          taskPath(uid, input.projectId, input.taskId),
+        );
+        const task = readTaskSnapshot(
+          await transaction.get(taskRef),
+          input.taskId,
+        );
+        const historyId = randomUUID();
 
-      transaction.update(taskRef, {
-        deletedAt: null,
-        updatedAt: serverTimestamp(),
+        transaction.update(taskRef, {
+          title: input.title.trim(),
+          notes: emptyToNull(input.notes),
+          status: input.status,
+          dueDate: dateInputToTimestamp(input.dueDate),
+          completedAt: nextCompletedAt(task, input.status),
+          updatedAt: serverTimestamp(),
+        });
+        transaction.set(
+          firestore.doc(historyPath(uid, historyId)),
+          buildHistoryRecord(
+            historyId,
+            'task',
+            task.id,
+            input.projectId,
+            'update',
+            input.title.trim(),
+          ),
+        );
+
+        if (task.status !== input.status) {
+          const statusHistoryId = randomUUID();
+          transaction.set(
+            firestore.doc(historyPath(uid, statusHistoryId)),
+            buildHistoryRecord(
+              statusHistoryId,
+              'task',
+              task.id,
+              input.projectId,
+              'status_change',
+              `${input.title.trim()} -> ${input.status}`,
+            ),
+          );
+        }
       });
-      transaction.set(
-        firestore.doc(historyPath(uid, historyId)),
-        buildHistoryRecord(historyId, "task", task.id, input.projectId, "restore", task.title),
-      );
-    });
 
-    return success({ acknowledged: true });
-  } catch (error) {
-    return failure(error);
-  }
-});
+      return success({ acknowledged: true });
+    } catch (error) {
+      return failure(error);
+    }
+  },
+);
+
+export const deleteTask = onCall(
+  async (request): Promise<MutationResult<MutationAcknowledgement>> => {
+    const uid = requireUid(request.auth?.uid);
+
+    try {
+      const input = validateTaskMutationInput(request.data);
+
+      await firestore.runTransaction(async (transaction) => {
+        const taskRef = firestore.doc(
+          taskPath(uid, input.projectId, input.taskId),
+        );
+        const task = readTaskSnapshot(
+          await transaction.get(taskRef),
+          input.taskId,
+        );
+        const historyId = randomUUID();
+
+        transaction.update(taskRef, {
+          deletedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        transaction.set(
+          firestore.doc(historyPath(uid, historyId)),
+          buildHistoryRecord(
+            historyId,
+            'task',
+            task.id,
+            input.projectId,
+            'delete',
+            task.title,
+          ),
+        );
+      });
+
+      return success({ acknowledged: true });
+    } catch (error) {
+      return failure(error);
+    }
+  },
+);
+
+export const restoreTask = onCall(
+  async (request): Promise<MutationResult<MutationAcknowledgement>> => {
+    const uid = requireUid(request.auth?.uid);
+
+    try {
+      const input = validateTaskMutationInput(request.data);
+
+      await firestore.runTransaction(async (transaction) => {
+        await assertProjectIsActive(transaction, uid, input.projectId);
+
+        const taskRef = firestore.doc(
+          taskPath(uid, input.projectId, input.taskId),
+        );
+        const task = readTaskSnapshot(
+          await transaction.get(taskRef),
+          input.taskId,
+        );
+        const historyId = randomUUID();
+
+        transaction.update(taskRef, {
+          deletedAt: null,
+          updatedAt: serverTimestamp(),
+        });
+        transaction.set(
+          firestore.doc(historyPath(uid, historyId)),
+          buildHistoryRecord(
+            historyId,
+            'task',
+            task.id,
+            input.projectId,
+            'restore',
+            task.title,
+          ),
+        );
+      });
+
+      return success({ acknowledged: true });
+    } catch (error) {
+      return failure(error);
+    }
+  },
+);
 
 function requireUid(uid: string | undefined) {
   if (!uid) {
-    throw new MutationError("unauthenticated", "You must sign in before making changes.");
+    throw new MutationError(
+      'unauthenticated',
+      'You must sign in before making changes.',
+    );
   }
 
   return uid;
@@ -395,8 +499,8 @@ function validateCreateProjectInput(data: unknown): ProjectCreateInput {
   const record = asRecord(data);
 
   return {
-    name: requiredText(record, "name"),
-    description: optionalText(record, "description"),
+    name: requiredText(record, 'name'),
+    description: optionalText(record, 'description'),
   };
 }
 
@@ -404,27 +508,27 @@ function validateUpdateProjectInput(data: unknown): ProjectUpdateInput {
   const record = asRecord(data);
 
   return {
-    projectId: documentId(record, "projectId"),
-    name: requiredText(record, "name"),
-    description: optionalText(record, "description"),
-    archived: requiredBoolean(record, "archived"),
+    projectId: documentId(record, 'projectId'),
+    name: requiredText(record, 'name'),
+    description: optionalText(record, 'description'),
+    archived: requiredBoolean(record, 'archived'),
   };
 }
 
 function validateProjectMutationInput(data: unknown): ProjectMutationInput {
   const record = asRecord(data);
-  return { projectId: documentId(record, "projectId") };
+  return { projectId: documentId(record, 'projectId') };
 }
 
 function validateCreateTaskInput(data: unknown): TaskCreateInput {
   const record = asRecord(data);
 
   return {
-    projectId: documentId(record, "projectId"),
-    title: requiredText(record, "title"),
-    notes: optionalText(record, "notes"),
-    status: taskStatus(record, "status"),
-    dueDate: dateInput(record, "dueDate"),
+    projectId: documentId(record, 'projectId'),
+    title: requiredText(record, 'title'),
+    notes: optionalText(record, 'notes'),
+    status: taskStatus(record, 'status'),
+    dueDate: dateInput(record, 'dueDate'),
   };
 }
 
@@ -432,12 +536,12 @@ function validateUpdateTaskInput(data: unknown): TaskUpdateInput {
   const record = asRecord(data);
 
   return {
-    projectId: documentId(record, "projectId"),
-    taskId: documentId(record, "taskId"),
-    title: requiredText(record, "title"),
-    notes: optionalText(record, "notes"),
-    status: taskStatus(record, "status"),
-    dueDate: dateInput(record, "dueDate"),
+    projectId: documentId(record, 'projectId'),
+    taskId: documentId(record, 'taskId'),
+    title: requiredText(record, 'title'),
+    notes: optionalText(record, 'notes'),
+    status: taskStatus(record, 'status'),
+    dueDate: dateInput(record, 'dueDate'),
   };
 }
 
@@ -445,14 +549,17 @@ function validateTaskMutationInput(data: unknown): TaskMutationInput {
   const record = asRecord(data);
 
   return {
-    projectId: documentId(record, "projectId"),
-    taskId: documentId(record, "taskId"),
+    projectId: documentId(record, 'projectId'),
+    taskId: documentId(record, 'taskId'),
   };
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new MutationError("invalid-argument", "Request payload must be a JSON object.");
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new MutationError(
+      'invalid-argument',
+      'Request payload must be a JSON object.',
+    );
   }
 
   return value as Record<string, unknown>;
@@ -461,8 +568,11 @@ function asRecord(value: unknown): Record<string, unknown> {
 function requiredText(record: Record<string, unknown>, fieldName: string) {
   const value = record[fieldName];
 
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new MutationError("invalid-argument", `${fieldName} must be a non-empty string.`);
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new MutationError(
+      'invalid-argument',
+      `${fieldName} must be a non-empty string.`,
+    );
   }
 
   return value.trim();
@@ -471,8 +581,11 @@ function requiredText(record: Record<string, unknown>, fieldName: string) {
 function optionalText(record: Record<string, unknown>, fieldName: string) {
   const value = record[fieldName];
 
-  if (typeof value !== "string") {
-    throw new MutationError("invalid-argument", `${fieldName} must be a string.`);
+  if (typeof value !== 'string') {
+    throw new MutationError(
+      'invalid-argument',
+      `${fieldName} must be a string.`,
+    );
   }
 
   return value;
@@ -481,18 +594,27 @@ function optionalText(record: Record<string, unknown>, fieldName: string) {
 function requiredBoolean(record: Record<string, unknown>, fieldName: string) {
   const value = record[fieldName];
 
-  if (typeof value !== "boolean") {
-    throw new MutationError("invalid-argument", `${fieldName} must be a boolean.`);
+  if (typeof value !== 'boolean') {
+    throw new MutationError(
+      'invalid-argument',
+      `${fieldName} must be a boolean.`,
+    );
   }
 
   return value;
 }
 
-function taskStatus(record: Record<string, unknown>, fieldName: string): TaskStatus {
+function taskStatus(
+  record: Record<string, unknown>,
+  fieldName: string,
+): TaskStatus {
   const value = record[fieldName];
 
-  if (value !== "todo" && value !== "doing" && value !== "done") {
-    throw new MutationError("invalid-argument", `${fieldName} must be one of todo, doing, or done.`);
+  if (value !== 'todo' && value !== 'doing' && value !== 'done') {
+    throw new MutationError(
+      'invalid-argument',
+      `${fieldName} must be one of todo, doing, or done.`,
+    );
   }
 
   return value;
@@ -501,16 +623,22 @@ function taskStatus(record: Record<string, unknown>, fieldName: string): TaskSta
 function dateInput(record: Record<string, unknown>, fieldName: string) {
   const value = record[fieldName];
 
-  if (typeof value !== "string") {
-    throw new MutationError("invalid-argument", `${fieldName} must be a string.`);
+  if (typeof value !== 'string') {
+    throw new MutationError(
+      'invalid-argument',
+      `${fieldName} must be a string.`,
+    );
   }
 
   if (value.length === 0) {
-    return "";
+    return '';
   }
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw new MutationError("invalid-argument", `${fieldName} must use YYYY-MM-DD format.`);
+    throw new MutationError(
+      'invalid-argument',
+      `${fieldName} must use YYYY-MM-DD format.`,
+    );
   }
 
   return value;
@@ -519,73 +647,106 @@ function dateInput(record: Record<string, unknown>, fieldName: string) {
 function documentId(record: Record<string, unknown>, fieldName: string) {
   const value = record[fieldName];
 
-  if (typeof value !== "string" || value.trim().length === 0 || value.includes("/")) {
-    throw new MutationError("invalid-argument", `${fieldName} must be a valid document id.`);
+  if (
+    typeof value !== 'string' ||
+    value.trim().length === 0 ||
+    value.includes('/')
+  ) {
+    throw new MutationError(
+      'invalid-argument',
+      `${fieldName} must be a valid document id.`,
+    );
   }
 
   return value.trim();
 }
 
-async function assertProjectIsActive(transaction: Transaction, uid: string, projectId: string) {
-  const project = readProjectSnapshot(await transaction.get(firestore.doc(projectPath(uid, projectId))), projectId);
+async function assertProjectIsActive(
+  transaction: Transaction,
+  uid: string,
+  projectId: string,
+) {
+  const project = readProjectSnapshot(
+    await transaction.get(firestore.doc(projectPath(uid, projectId))),
+    projectId,
+  );
 
   if (project.deletedAt) {
-    throw new MutationError("failed-precondition", "Restore the parent project before changing its tasks.");
+    throw new MutationError(
+      'failed-precondition',
+      'Restore the parent project before changing its tasks.',
+    );
   }
 
   return project;
 }
 
-function readProjectSnapshot(snapshot: FirebaseFirestore.DocumentSnapshot, fallbackId: string): ProjectRecord {
+function readProjectSnapshot(
+  snapshot: FirebaseFirestore.DocumentSnapshot,
+  fallbackId: string,
+): ProjectRecord {
   if (!snapshot.exists) {
-    throw new MutationError("not-found", "Project not found.");
+    throw new MutationError('not-found', 'Project not found.');
   }
 
   const data = snapshot.data();
 
-  if (!data || typeof data.name !== "string" || typeof data.ownerUid !== "string") {
-    throw new MutationError("internal", "Stored project data is invalid.");
+  if (
+    !data ||
+    typeof data.name !== 'string' ||
+    typeof data.ownerUid !== 'string'
+  ) {
+    throw new MutationError('internal', 'Stored project data is invalid.');
   }
 
   return {
-    id: typeof data.id === "string" ? data.id : fallbackId,
+    id: typeof data.id === 'string' ? data.id : fallbackId,
     ownerUid: data.ownerUid,
     name: data.name,
-    description: typeof data.description === "string" ? data.description : null,
+    description: typeof data.description === 'string' ? data.description : null,
     archived: data.archived === true,
     deletedAt: data.deletedAt ?? null,
   };
 }
 
-function readTaskSnapshot(snapshot: FirebaseFirestore.DocumentSnapshot, fallbackId: string): TaskRecord {
+function readTaskSnapshot(
+  snapshot: FirebaseFirestore.DocumentSnapshot,
+  fallbackId: string,
+): TaskRecord {
   if (!snapshot.exists) {
-    throw new MutationError("not-found", "Task not found.");
+    throw new MutationError('not-found', 'Task not found.');
   }
 
   return readTaskData(snapshot.data(), fallbackId);
 }
 
-function readTaskRecord(snapshot: QueryDocumentSnapshot, fallbackId: string): TaskRecord {
+function readTaskRecord(
+  snapshot: QueryDocumentSnapshot,
+  fallbackId: string,
+): TaskRecord {
   return readTaskData(snapshot.data(), fallbackId);
 }
 
-function readTaskData(data: FirebaseFirestore.DocumentData | undefined, fallbackId: string): TaskRecord {
+function readTaskData(
+  data: FirebaseFirestore.DocumentData | undefined,
+  fallbackId: string,
+): TaskRecord {
   if (
     !data ||
-    typeof data.title !== "string" ||
-    typeof data.ownerUid !== "string" ||
-    typeof data.projectId !== "string" ||
+    typeof data.title !== 'string' ||
+    typeof data.ownerUid !== 'string' ||
+    typeof data.projectId !== 'string' ||
     !isTaskStatus(data.status)
   ) {
-    throw new MutationError("internal", "Stored task data is invalid.");
+    throw new MutationError('internal', 'Stored task data is invalid.');
   }
 
   return {
-    id: typeof data.id === "string" ? data.id : fallbackId,
+    id: typeof data.id === 'string' ? data.id : fallbackId,
     ownerUid: data.ownerUid,
     projectId: data.projectId,
     title: data.title,
-    notes: typeof data.notes === "string" ? data.notes : null,
+    notes: typeof data.notes === 'string' ? data.notes : null,
     status: data.status,
     dueDate: data.dueDate ?? null,
     completedAt: data.completedAt ?? null,
@@ -594,15 +755,15 @@ function readTaskData(data: FirebaseFirestore.DocumentData | undefined, fallback
 }
 
 function isTaskStatus(value: unknown): value is TaskStatus {
-  return value === "todo" || value === "doing" || value === "done";
+  return value === 'todo' || value === 'doing' || value === 'done';
 }
 
 function buildHistoryRecord(
   historyId: string,
-  entityType: "project" | "task",
+  entityType: 'project' | 'task',
   entityId: string,
   projectId: string | null,
-  action: "create" | "update" | "delete" | "restore" | "status_change",
+  action: 'create' | 'update' | 'delete' | 'restore' | 'status_change',
   title: string,
 ) {
   return {
@@ -617,8 +778,8 @@ function buildHistoryRecord(
 }
 
 function nextCompletedAt(task: TaskRecord, nextStatus: TaskStatus) {
-  if (nextStatus === "done") {
-    if (task.status === "done" && task.completedAt) {
+  if (nextStatus === 'done') {
+    if (task.status === 'done' && task.completedAt) {
       return task.completedAt;
     }
 
@@ -682,8 +843,8 @@ function failure<T>(error: unknown): MutationResult<T> {
   return {
     ok: false,
     error: {
-      code: "internal",
-      message: "The write service failed unexpectedly.",
+      code: 'internal',
+      message: 'The write service failed unexpectedly.',
     },
   };
 }

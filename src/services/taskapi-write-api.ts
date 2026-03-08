@@ -77,6 +77,12 @@ async function callTaskapiWriteFunction<Name extends TaskapiWriteFunctionName>(
   name: Name,
   payload: TaskapiWriteContractMap[Name]['payload'],
 ): Promise<TaskapiWriteFunctionData<Name>> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    throw new Error(
+      'You are offline. Reconnect before saving changes to taskapi.',
+    );
+  }
+
   const callable = httpsCallable<
     TaskapiWriteContractMap[Name]['payload'],
     TaskapiWriteContractMap[Name]['result']
@@ -103,6 +109,10 @@ function getTaskapiWriteErrorMessage(error: unknown) {
   if (error instanceof FirebaseError) {
     if (error.code === 'functions/unauthenticated') {
       return 'You must sign in again before making changes.';
+    }
+
+    if (error.code === 'functions/deadline-exceeded') {
+      return 'The write request timed out. Check the network connection and try again.';
     }
 
     if (error.code === 'functions/unavailable') {

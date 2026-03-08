@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { AppNav } from '@/components/layout/AppNav';
 import { Frame } from '@/components/layout/Frame';
+import { ConnectivityBanner } from '@/components/feedback/ConnectivityBanner';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/features/auth/useAuth';
 
@@ -32,6 +33,7 @@ export function AppShell() {
           </Button>
         }
       />
+      <ConnectivityBanner />
       <main className="app-shell__content">
         <Outlet />
       </main>

@@ -1,6 +1,6 @@
 # taskapi
 
-Server-controlled write path for `taskapi`, a single-user task management SPA with Firebase-backed Google sign-in, client-side Firestore reads, history retention, and restore support.
+Installable PWA for `taskapi`, a single-user task management SPA with Firebase-backed Google sign-in, client-side Firestore reads, server-side callable writes, history retention, and restore support.
 
 ## Governing docs
 
@@ -20,15 +20,19 @@ Implemented in this phase:
 - server-side input validation and authenticated uid derivation
 - atomic mutation + history writes through Admin SDK transactions
 - tighter Firestore rules that block direct client writes to project/task/history data
+- generated web manifest, installable icons, and standalone display metadata
+- service worker precaching for the app shell and essential static assets
+- offline startup/navigation support for already-cached assets
+- graceful offline messaging for network-required mutations
 - repository/service boundaries that keep pages free of Firebase write logic
-- ESLint, Prettier, and Vitest coverage for client/server write paths
+- ESLint, Prettier, and Vitest coverage for client/server/PWA wiring
 
 Explicitly deferred:
 
-- PWA finalization
 - MCP implementation
 - advanced filtering/sorting
 - arbitrary historical revision rollback
+- offline write queueing or conflict resolution
 
 ## Directory structure
 
@@ -36,7 +40,7 @@ Explicitly deferred:
 src/
   app/          App shell and top-level tests
   components/   Reusable UI, layout, and skeleton primitives
-  features/     Feature folders for auth, projects, tasks, and history
+  features/     Feature folders for auth, projects, tasks, history, and PWA hooks
   lib/          Firebase configuration/init boundaries
   pages/        Route-level SPA screens
   routes/       Router setup and route smoke tests
@@ -47,6 +51,7 @@ src/
 server/         Firebase Functions, domain write logic, and persistence paths
 docs/           Requirements and implementation plans
 firestore.rules Owner-only read rules with client writes disabled
+public/         PWA icons and static assets
 ```
 
 ## Environment variables
@@ -102,6 +107,7 @@ Required behavior:
 ```bash
 pnpm install
 pnpm dev
+pnpm preview
 pnpm lint
 pnpm format:check
 pnpm test
@@ -118,12 +124,19 @@ pnpm build
 6. Deploy or emulate the callable Firebase Functions.
 7. Run `pnpm dev`.
 8. Open the local Vite URL in a browser.
+9. Revisit the app once online so the service worker can cache the shell.
+
+## PWA behavior
+
+- installability is provided through the generated `manifest.webmanifest`
+- `vite-plugin-pwa` generates the service worker and precache manifest at build time
+- already-cached app shell routes can reopen offline
+- mutations remain online-only and show a clear offline error when the browser is disconnected
 
 ## Next phase
 
-The next recommended phase is PWA completion, which should add:
+The next recommended phase is MCP readiness, which should add:
 
-- web manifest finalization
-- installability verification
-- service worker wiring
-- offline shell behavior where appropriate
+- reusable tool-facing service methods
+- MCP contracts over the stabilized project/task/history behavior
+- separation of UI concerns from future MCP entry points

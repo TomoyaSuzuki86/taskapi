@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/app/AppShell';
 import type { AuthContextValue } from '@/features/auth/auth-context';
 import { BootstrapHomePage } from '@/pages/BootstrapHomePage';
@@ -53,5 +53,39 @@ describe('AppShell', () => {
       screen.getByRole('button', { name: 'Sign out' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Your workspace')).toBeInTheDocument();
+  });
+
+  it('shows an offline banner when the browser is offline', () => {
+    const originalNavigator = window.navigator;
+    vi.stubGlobal('navigator', {
+      ...originalNavigator,
+      onLine: false,
+    });
+
+    const dataServices = createTestDataServices();
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/',
+          element: <AppShell />,
+          children: [{ index: true, element: <BootstrapHomePage /> }],
+        },
+      ],
+      { initialEntries: ['/'] },
+    );
+
+    render(
+      <TestAuthProvider value={authenticatedValue}>
+        <TestDataServicesProvider value={dataServices}>
+          <RouterProvider router={router} />
+        </TestDataServicesProvider>
+      </TestAuthProvider>,
+    );
+
+    expect(
+      screen.getByText(/Offline mode\. Cached screens can still open/i),
+    ).toBeInTheDocument();
+
+    vi.stubGlobal('navigator', originalNavigator);
   });
 });

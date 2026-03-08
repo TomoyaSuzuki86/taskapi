@@ -73,4 +73,26 @@ describe('createTaskapiWriteApi', () => {
       }),
     ).rejects.toThrow('Restore the parent project before changing its tasks.');
   });
+
+  it('fails fast with a clear message when the browser is offline', async () => {
+    const originalNavigator = window.navigator;
+    vi.stubGlobal('navigator', {
+      ...originalNavigator,
+      onLine: false,
+    });
+
+    const api = createTaskapiWriteApi();
+
+    await expect(
+      api.createProject({
+        name: 'Offline write',
+        description: '',
+      }),
+    ).rejects.toThrow(
+      'You are offline. Reconnect before saving changes to taskapi.',
+    );
+
+    expect(functionsMocks.httpsCallable).not.toHaveBeenCalled();
+    vi.stubGlobal('navigator', originalNavigator);
+  });
 });
