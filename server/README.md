@@ -1,8 +1,10 @@
 # Server Layer
 
-This directory now contains the server-controlled write path for history-safe project and task mutations.
+`functions/src` is the active runtime source of truth for taskapi callable behavior.
 
-- `api/` exposes callable Firebase Functions and Admin SDK initialization
-- `domain/` owns payload validation, mutation results, and write orchestration
-- `persistence/` owns Firestore path helpers for Admin SDK writes
+This `server/` tree remains only as local compatibility/reference code for root-level review and test coverage while the repository transitions toward the `functions/` package layout.
+
+- `api/` contains legacy callable-oriented references
+- `domain/` contains legacy write-path references
+- `persistence/` contains shared path helpers mirrored for local coverage
 - `mcp/` remains reserved for a later phase

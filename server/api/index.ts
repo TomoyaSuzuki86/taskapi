@@ -41,7 +41,7 @@ export const createProject = onCall(
 
     if (!uid) {
       return mutationFailure<CreateProjectMutationData>(
-        'unauthenticated',
+        'UNAUTHENTICATED',
         'You must sign in before creating a project.',
       );
     }
@@ -64,7 +64,7 @@ export const updateProject = onCall(
 
     if (!uid) {
       return mutationFailure<MutationAcknowledgement>(
-        'unauthenticated',
+        'UNAUTHENTICATED',
         'You must sign in before updating a project.',
       );
     }
@@ -87,7 +87,7 @@ export const deleteProject = onCall(
 
     if (!uid) {
       return mutationFailure<MutationAcknowledgement>(
-        'unauthenticated',
+        'UNAUTHENTICATED',
         'You must sign in before deleting a project.',
       );
     }
@@ -110,7 +110,7 @@ export const restoreProject = onCall(
 
     if (!uid) {
       return mutationFailure<MutationAcknowledgement>(
-        'unauthenticated',
+        'UNAUTHENTICATED',
         'You must sign in before restoring a project.',
       );
     }
@@ -133,7 +133,7 @@ export const createTask = onCall(
 
     if (!uid) {
       return mutationFailure<CreateTaskMutationData>(
-        'unauthenticated',
+        'UNAUTHENTICATED',
         'You must sign in before creating a task.',
       );
     }
@@ -154,7 +154,7 @@ export const updateTask = onCall(
 
     if (!uid) {
       return mutationFailure<MutationAcknowledgement>(
-        'unauthenticated',
+        'UNAUTHENTICATED',
         'You must sign in before updating a task.',
       );
     }
@@ -175,7 +175,7 @@ export const deleteTask = onCall(
 
     if (!uid) {
       return mutationFailure<MutationAcknowledgement>(
-        'unauthenticated',
+        'UNAUTHENTICATED',
         'You must sign in before deleting a task.',
       );
     }
@@ -196,7 +196,7 @@ export const restoreTask = onCall(
 
     if (!uid) {
       return mutationFailure<MutationAcknowledgement>(
-        'unauthenticated',
+        'UNAUTHENTICATED',
         'You must sign in before restoring a task.',
       );
     }
@@ -218,7 +218,7 @@ function toMutationFailure<T>(error: unknown) {
   }
 
   return mutationFailure<T>(
-    'internal',
+    'INTERNAL',
     'The write service failed unexpectedly.',
   );
 }

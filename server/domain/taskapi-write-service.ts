@@ -487,7 +487,7 @@ function assertProjectIsActive(
 
   if (project.deletedAt) {
     throw new TaskapiMutationError(
-      'failed-precondition',
+      'FAILED_PRECONDITION',
       'Restore the parent project before changing its tasks.',
     );
   }
@@ -500,7 +500,7 @@ function readProjectSnapshot(
   projectId: string,
 ): ProjectRecord {
   if (!snapshot.exists) {
-    throw new TaskapiMutationError('not-found', 'Project not found.');
+    throw new TaskapiMutationError('NOT_FOUND', 'Project not found.');
   }
 
   return readProjectRecord(snapshot.data(), projectId);
@@ -511,7 +511,7 @@ function readTaskSnapshot(
   taskId: string,
 ): TaskRecord {
   if (!snapshot.exists) {
-    throw new TaskapiMutationError('not-found', 'Task not found.');
+    throw new TaskapiMutationError('NOT_FOUND', 'Task not found.');
   }
 
   return readTaskRecord(snapshot.data(), taskId);
@@ -527,7 +527,7 @@ function readProjectRecord(
     typeof data.ownerUid !== 'string'
   ) {
     throw new TaskapiMutationError(
-      'internal',
+      'INTERNAL',
       'Stored project data is invalid.',
     );
   }
@@ -555,7 +555,7 @@ function readTaskRecord(
     typeof data.projectId !== 'string' ||
     !isTaskStatus(data.status)
   ) {
-    throw new TaskapiMutationError('internal', 'Stored task data is invalid.');
+    throw new TaskapiMutationError('INTERNAL', 'Stored task data is invalid.');
   }
 
   return {

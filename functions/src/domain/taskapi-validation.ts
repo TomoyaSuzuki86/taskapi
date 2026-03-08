@@ -1,12 +1,14 @@
 import type {
+  ChangeTaskStatusMutationPayload,
   CreateTaskMutationPayload,
+  ProjectCreateInput,
   ProjectMutationPayload,
   TaskMutationPayload,
   UpdateProjectMutationPayload,
   UpdateTaskMutationPayload,
-} from '../../src/types/mutations';
-import type { ProjectCreateInput, TaskStatus } from '../../src/types/domain';
-import { TaskapiMutationError } from './taskapi-mutation-error';
+} from './taskapi-contracts';
+import { TaskapiContractError } from './taskapi-contracts';
+import type { TaskStatus } from './taskapi-contracts';
 
 type RecordValue = Record<string, unknown>;
 
@@ -80,9 +82,32 @@ export function validateTaskMutationInput(data: unknown): TaskMutationPayload {
   };
 }
 
+export function validateChangeTaskStatusInput(
+  data: unknown,
+): ChangeTaskStatusMutationPayload {
+  const record = asRecord(data);
+
+  return {
+    projectId: readDocumentId(record, 'projectId'),
+    taskId: readDocumentId(record, 'taskId'),
+    status: readTaskStatus(record, 'status'),
+  };
+}
+
+export function requireAuthenticatedUid(uid: string | undefined) {
+  if (!uid) {
+    throw new TaskapiContractError(
+      'UNAUTHENTICATED',
+      'You must sign in before making changes.',
+    );
+  }
+
+  return uid;
+}
+
 function asRecord(value: unknown): RecordValue {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new TaskapiMutationError(
+    throw new TaskapiContractError(
       'INVALID_ARGUMENT',
       'Request payload must be a JSON object.',
     );
@@ -95,7 +120,7 @@ function readRequiredText(record: RecordValue, fieldName: string) {
   const value = record[fieldName];
 
   if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new TaskapiMutationError(
+    throw new TaskapiContractError(
       'INVALID_ARGUMENT',
       `${fieldName} must be a non-empty string.`,
     );
@@ -108,7 +133,7 @@ function readOptionalText(record: RecordValue, fieldName: string) {
   const value = record[fieldName];
 
   if (typeof value !== 'string') {
-    throw new TaskapiMutationError(
+    throw new TaskapiContractError(
       'INVALID_ARGUMENT',
       `${fieldName} must be a string.`,
     );
@@ -121,7 +146,7 @@ function readBoolean(record: RecordValue, fieldName: string) {
   const value = record[fieldName];
 
   if (typeof value !== 'boolean') {
-    throw new TaskapiMutationError(
+    throw new TaskapiContractError(
       'INVALID_ARGUMENT',
       `${fieldName} must be a boolean.`,
     );
@@ -134,7 +159,7 @@ function readTaskStatus(record: RecordValue, fieldName: string): TaskStatus {
   const value = record[fieldName];
 
   if (value !== 'todo' && value !== 'doing' && value !== 'done') {
-    throw new TaskapiMutationError(
+    throw new TaskapiContractError(
       'INVALID_ARGUMENT',
       `${fieldName} must be one of todo, doing, or done.`,
     );
@@ -147,7 +172,7 @@ function readDateInput(record: RecordValue, fieldName: string) {
   const value = record[fieldName];
 
   if (typeof value !== 'string') {
-    throw new TaskapiMutationError(
+    throw new TaskapiContractError(
       'INVALID_ARGUMENT',
       `${fieldName} must be a string.`,
     );
@@ -158,7 +183,7 @@ function readDateInput(record: RecordValue, fieldName: string) {
   }
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw new TaskapiMutationError(
+    throw new TaskapiContractError(
       'INVALID_ARGUMENT',
       `${fieldName} must use YYYY-MM-DD format.`,
     );
@@ -175,7 +200,7 @@ function readDocumentId(record: RecordValue, fieldName: string) {
     value.trim().length === 0 ||
     value.includes('/')
   ) {
-    throw new TaskapiMutationError(
+    throw new TaskapiContractError(
       'INVALID_ARGUMENT',
       `${fieldName} must be a valid document id.`,
     );

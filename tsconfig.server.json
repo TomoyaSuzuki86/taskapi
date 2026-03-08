@@ -15,5 +15,5 @@
     "noUncheckedIndexedAccess": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["server/**/*.ts", "src/types/**/*.ts"]
+  "include": ["server/**/*.ts", "functions/src/**/*.ts", "src/types/**/*.ts"]
 }

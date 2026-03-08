@@ -29,7 +29,7 @@ Implemented in this phase:
 
 Explicitly deferred:
 
-- MCP implementation
+- full MCP transport/server implementation
 - advanced filtering/sorting
 - arbitrary historical revision rollback
 - offline write queueing or conflict resolution
@@ -48,7 +48,8 @@ src/
   styles/       Global tokens and layout styles
   test/         Shared test setup
   types/        Domain, env, and mutation contract types
-server/         Firebase Functions, domain write logic, and persistence paths
+functions/      Firebase callable transport plus shared application/domain services
+server/         Legacy server-oriented references kept for local review/type-check coverage
 docs/           Requirements and implementation plans
 firestore.rules Owner-only read rules with client writes disabled
 public/         PWA icons and static assets
@@ -94,7 +95,8 @@ Local and deployed rules should use [firestore.rules](/C:/Users/tomo1/Documents/
 
 ## Firebase Functions setup
 
-Mutations now flow through callable Firebase Functions exported from [server/api/index.ts](/C:/Users/tomo1/Documents/taskapi/server/api/index.ts).
+Mutations now flow through callable Firebase Functions exported from [index.ts](/C:/Users/tomo1/Documents/taskapi/functions/src/index.ts).
+`functions/src` is the runtime source of truth for callable behavior; `server/` remains non-runtime compatibility/reference code only.
 
 Required behavior:
 
@@ -133,10 +135,11 @@ pnpm build
 - already-cached app shell routes can reopen offline
 - mutations remain online-only and show a clear offline error when the browser is disconnected
 
-## Next phase
+## MCP readiness
 
-The next recommended phase is MCP readiness, which should add:
+The MCP-readiness refactor keeps current app behavior unchanged while preparing a transport-agnostic server surface for future tools.
 
-- reusable tool-facing service methods
-- MCP contracts over the stabilized project/task/history behavior
-- separation of UI concerns from future MCP entry points
+- shared mutation use cases live in [taskapi-mutation-use-cases.ts](/C:/Users/tomo1/Documents/taskapi/functions/src/application/taskapi-mutation-use-cases.ts)
+- shared query services live in [taskapi-query-service.ts](/C:/Users/tomo1/Documents/taskapi/functions/src/application/taskapi-query-service.ts)
+- callable transport adapters live in [callable-handlers.ts](/C:/Users/tomo1/Documents/taskapi/functions/src/transport/callable-handlers.ts)
+- the planned MCP tool surface is documented in [mcp-tool-surface.md](/C:/Users/tomo1/Documents/taskapi/docs/design/mcp-tool-surface.md)
