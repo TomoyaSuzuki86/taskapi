@@ -4,18 +4,17 @@ MCP Tool Surface Plan
 1. Purpose
 ----------
 
-This document defines the transport-agnostic taskapi surface prepared during the MCP-readiness phase.
+This document defines the transport-agnostic taskapi surface and the minimal MCP transport now implemented for taskapi.
 
 Current scope:
 
 * keep the web app behavior unchanged,
-* keep Firebase callable Functions as the active transport for writes,
+* keep Firebase callable Functions as the active app transport for writes,
 * keep client-side Firestore reads unchanged for the SPA,
-* expose stable machine-oriented contracts that a future MCP server can reuse.
+* expose stable machine-oriented contracts through a minimal MCP stdio server that reuses the same application services.
 
 Out of scope for this phase:
 
-* MCP server startup and transport wiring,
 * auth redesign,
 * replacing app reads with server queries,
 * collaboration or assignee concepts.
@@ -23,7 +22,7 @@ Out of scope for this phase:
 2. Architecture shape
 ---------------------
 
-The reusable server-side surface now separates three concerns under `functions/src/`:
+The reusable server-side surface separates three concerns under `functions/src/`:
 
 * `application/`
   * `TaskapiMutationUseCases` for write operations with history-safe transactions
@@ -34,7 +33,9 @@ The reusable server-side surface now separates three concerns under `functions/s
 * `transport/`
   * Firebase callable handler adapters that convert auth + payload input into shared service calls
 
-Planned MCP integration should call the same `application/` services, not reimplement project/task/history rules in a separate transport.
+The minimal MCP transport lives under `server/mcp/` and reuses the same `application/` services plus the same domain validation rules.
+
+The MCP transport must call the same `application/` services, not reimplement project/task/history rules in separate glue code.
 
 3. Stable result contract
 -------------------------
@@ -106,28 +107,26 @@ They do not change the current app architecture, which still reads directly from
 6. Tool schema plan
 -------------------
 
-Future MCP tool names should stay close to the shared service names:
+The implemented MCP tool names use stable snake_case names:
 
 ```ts
 type TaskapiToolName =
-  | 'createProject'
-  | 'updateProject'
-  | 'deleteProject'
-  | 'restoreProject'
-  | 'createTask'
-  | 'updateTask'
-  | 'deleteTask'
-  | 'restoreTask'
-  | 'changeTaskStatus'
-  | 'listProjects'
-  | 'getProject'
-  | 'listTasks'
-  | 'listDeletedProjects'
-  | 'listDeletedTasks'
-  | 'listHistory';
+  | 'list_projects'
+  | 'get_project'
+  | 'create_project'
+  | 'update_project'
+  | 'delete_project'
+  | 'restore_project'
+  | 'list_tasks'
+  | 'create_task'
+  | 'update_task'
+  | 'delete_task'
+  | 'restore_task'
+  | 'change_task_status'
+  | 'list_history';
 ```
 
-Suggested MCP request/response rule:
+MCP request/response rule:
 
 * request payloads should match the shared validated payload types exactly,
 * responses should preserve the `MutationResult<T>` envelope unchanged,
@@ -189,16 +188,18 @@ List history result:
 }
 ```
 
-8. Transport plan
------------------
+8. Transport implementation
+---------------------------
 
-Firebase callable Functions remain the only active transport in this phase.
+Firebase callable Functions remain the active app transport.
+The MCP server is a separate stdio transport for machine callers.
 
-The future MCP transport should:
+The MCP transport currently:
 
-1. authenticate and resolve a single Firebase `uid`
-2. validate incoming tool payloads with the same domain validators
-3. invoke the shared `application/` services
-4. return the shared `MutationResult<T>` contract unchanged
+1. resolves one configured Firebase owner `uid`
+2. validates incoming tool payloads with the same shared validators
+3. invokes the shared `application/` services
+4. converts validation and domain errors into the shared `MutationResult<T>` envelope
+5. returns the same machine-oriented envelope as MCP `structuredContent`
 
-This keeps callable Functions and future MCP tools behaviorally aligned without changing the current SPA flow.
+This keeps callable Functions and MCP tools behaviorally aligned without changing the current SPA flow.
