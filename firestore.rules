@@ -110,20 +110,17 @@ service cloud.firestore {
 
     match /users/{uid}/projects/{projectId} {
       allow read: if isOwner(uid);
-      allow create, update: if isOwner(uid) && projectFieldsAreValid(uid, projectId);
-      allow delete: if false;
+      allow create, update, delete: if false;
 
       match /tasks/{taskId} {
         allow read: if isOwner(uid);
-        allow create, update: if isOwner(uid) && taskFieldsAreValid(uid, projectId, taskId);
-        allow delete: if false;
+        allow create, update, delete: if false;
       }
     }
 
     match /users/{uid}/history/{historyId} {
       allow read: if isOwner(uid);
-      allow create: if isOwner(uid) && historyFieldsAreValid(historyId);
-      allow update, delete: if false;
+      allow create, update, delete: if false;
     }
   }
 }

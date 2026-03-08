@@ -1,10 +1,8 @@
-# Server Placeholder
+# Server Layer
 
-Bootstrap creates the server-side directory boundary only.
+This directory now contains the server-controlled write path for history-safe project and task mutations.
 
-Future phases can add:
-
-- `api/` for controlled write endpoints
-- `domain/` for reusable business logic
-- `persistence/` for Firebase Admin access
-- `mcp/` for MCP-facing entry points
+- `api/` exposes callable Firebase Functions and Admin SDK initialization
+- `domain/` owns payload validation, mutation results, and write orchestration
+- `persistence/` owns Firestore path helpers for Admin SDK writes
+- `mcp/` remains reserved for a later phase
