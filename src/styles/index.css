@@ -88,6 +88,11 @@ input {
   margin: 0;
 }
 
+.app-header__subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--color-ink-soft);
+}
+
 .app-header__eyebrow,
 .section-heading__eyebrow {
   margin: 0 0 0.2rem;
@@ -183,6 +188,10 @@ input {
   color: var(--color-ink-soft);
 }
 
+.muted-copy--inverse {
+  color: rgba(255, 250, 242, 0.82);
+}
+
 .button {
   border: 0;
   border-radius: var(--radius-control);
@@ -241,6 +250,29 @@ input {
   font-weight: 600;
   color: var(--color-accent);
   text-decoration: none;
+}
+
+.text-link--button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.auth-entry {
+  display: grid;
+  gap: 1rem;
+}
+
+.notice {
+  padding: 1rem;
+  border-radius: var(--radius-control);
+}
+
+.notice--error {
+  background: rgba(157, 2, 8, 0.9);
+  color: #fffaf2;
 }
 
 .skeleton {
@@ -319,5 +351,10 @@ input {
 
   .card {
     padding: 1.25rem;
+  }
+
+  .auth-entry {
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: start;
   }
 }

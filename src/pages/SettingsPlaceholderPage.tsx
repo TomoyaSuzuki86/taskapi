@@ -1,27 +1,36 @@
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useAuth } from '@/features/auth/useAuth';
 
 export function SettingsPlaceholderPage() {
+  const { activeAction, signOut, user } = useAuth();
+
   return (
     <div className="stack stack--page">
       <Card>
-        <p className="section-heading__eyebrow">Configuration</p>
-        <h2>Settings and auth placeholder</h2>
+        <p className="section-heading__eyebrow">Account</p>
+        <h2>Session settings</h2>
         <p className="muted-copy">
-          Sign-in, sign-out, and account-specific settings are deferred. This
-          page only provides stable UI primitives for future auth wiring.
+          This phase only exposes authenticated session details and explicit
+          logout. Full settings remain out of scope.
         </p>
       </Card>
       <Card>
         <div className="stack">
           <Input
-            label="Display name preview"
-            placeholder="Single-user only"
+            label="Display name"
+            value={user?.displayName ?? ''}
             disabled
           />
-          <Button type="button" disabled>
-            Google sign-in lands in the next phase
+          <Input label="Email" value={user?.email ?? ''} disabled />
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => void signOut()}
+            disabled={activeAction === 'sign_out'}
+          >
+            {activeAction === 'sign_out' ? 'Signing out...' : 'Sign out'}
           </Button>
         </div>
       </Card>

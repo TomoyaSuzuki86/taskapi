@@ -1,76 +1,49 @@
-import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AppBootstrapPanel } from '@/features/auth/components/AppBootstrapPanel';
-import { ProjectListSkeleton } from '@/components/skeleton/ProjectListSkeleton';
-import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-
-const placeholderProjects = [
-  {
-    id: 'planning-hub',
-    name: 'Planning hub',
-    description:
-      'Future project list cards will render here after auth and Firestore wiring.',
-  },
-  {
-    id: 'writing-queue',
-    name: 'Writing queue',
-    description:
-      'This placeholder exists only to stabilize layout and navigation during bootstrap.',
-  },
-];
+import { useAuth } from '@/features/auth/useAuth';
 
 export function BootstrapHomePage() {
-  const [showSkeleton, setShowSkeleton] = useState(true);
-  const projects = useMemo(() => placeholderProjects, []);
+  const { user } = useAuth();
 
   return (
     <div className="stack stack--page">
-      <AppBootstrapPanel />
       <Card>
         <div className="section-heading">
           <div>
-            <p className="section-heading__eyebrow">Projects</p>
-            <h2>Home shell</h2>
+            <p className="section-heading__eyebrow">Authenticated home</p>
+            <h2>Session active</h2>
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => setShowSkeleton((value) => !value)}
-          >
-            {showSkeleton ? 'Show cards' : 'Show skeleton'}
-          </Button>
+          <span className="pill pill--ready">Signed in</span>
         </div>
         <p className="muted-copy">
-          Bootstrap keeps project management out of scope. This screen exists to
-          prove the future home route, loading treatment, and responsive shell.
+          Signed in as {user?.displayName ?? 'your Google account'}
+          {user?.email ? ` (${user.email})` : ''}. Route protection and session
+          persistence are now active.
         </p>
       </Card>
-
-      {showSkeleton ? (
-        <ProjectListSkeleton />
-      ) : (
-        <div className="stack">
-          {projects.map((project) => (
-            <Card key={project.id}>
-              <div className="stack stack--tight">
-                <div className="section-heading section-heading--compact">
-                  <div>
-                    <h3>{project.name}</h3>
-                    <p className="muted-copy">{project.description}</p>
-                  </div>
-                  <Button type="button" variant="ghost">
-                    Placeholder
-                  </Button>
-                </div>
-                <Link className="text-link" to={`/projects/${project.id}`}>
-                  Open project shell
-                </Link>
-              </div>
-            </Card>
-          ))}
+      <Card tone="muted">
+        <div className="stack stack--tight">
+          <p className="section-heading__eyebrow">Projects next</p>
+          <h3>No project data loaded in this phase</h3>
+          <p className="muted-copy">
+            Project, task, and history reads remain out of scope for
+            auth-session. The next phase should connect owner-scoped Firestore
+            data to this authenticated shell.
+          </p>
         </div>
-      )}
+      </Card>
+      <Card>
+        <div className="stack stack--tight">
+          <p className="section-heading__eyebrow">Protected routes</p>
+          <h3>Navigation stays inside the signed-in shell</h3>
+          <Link className="text-link" to="/history">
+            Open history placeholder
+          </Link>
+          <Link className="text-link" to="/projects/session-foundation">
+            Open project detail placeholder
+          </Link>
+        </div>
+      </Card>
     </div>
   );
 }

@@ -1,3 +1,11 @@
-# Auth Feature Placeholder
+# Auth Feature
 
-Google sign-in, session persistence, redirect behavior, and auth bootstrap state are intentionally deferred until the auth phase.
+This directory contains the auth-session phase implementation:
+
+- Firebase Auth session provider
+- auth bootstrap/loading screens
+- public/protected route gates
+- Google sign-in entry UI
+- logout support
+
+Project/task/history data work remains out of scope here.
