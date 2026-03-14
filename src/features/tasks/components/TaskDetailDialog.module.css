@@ -1,0 +1,50 @@
+.form {
+  display: grid;
+  gap: 1rem;
+}
+
+.fields {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.split {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.error {
+  margin: 0;
+  color: #b42318;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.actions {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.deleteZone {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.confirmCopy {
+  color: #6b7789;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+@media (min-width: 720px) {
+  .split {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .actions {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+}

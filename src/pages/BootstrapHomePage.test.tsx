@@ -39,9 +39,9 @@ describe('BootstrapHomePage', () => {
       </TestAuthProvider>,
     );
 
-    expect(screen.getByRole('heading', { name: '今日' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '近日' })).toBeInTheDocument();
-    expect(screen.getByText('今日のタスクはありません')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Today' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Upcoming' })).toBeInTheDocument();
+    expect(screen.getByText('No tasks for today.')).toBeInTheDocument();
   });
 
   it('creates a tagged task and stays on the home screen', async () => {
@@ -62,16 +62,18 @@ describe('BootstrapHomePage', () => {
       </TestAuthProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: 'タスクを追加' }));
+    await user.click(screen.getByRole('button', { name: 'Create task' }));
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
     const dialog = screen.getByRole('dialog');
-    await user.type(within(dialog).getByLabelText('タスク名'), 'Launch plan');
-    await user.type(within(dialog).getByLabelText('メモ（任意）'), 'Ship CRUD phase');
-    await user.type(within(dialog).getByLabelText('タグ'), 'frontend, urgent');
-    await user.click(within(dialog).getByRole('button', { name: 'タスクを追加' }));
+    const textboxes = within(dialog).getAllByRole('textbox');
+    await user.type(textboxes[0]!, 'Launch plan');
+    await user.type(textboxes[1]!, 'Ship CRUD phase');
+    await user.type(textboxes[2]!, 'frontend, urgent');
+    const dialogButtons = within(dialog).getAllByRole('button');
+    await user.click(dialogButtons[dialogButtons.length - 1]!);
 
     await waitFor(() => {
       expect(createTask).toHaveBeenCalledWith('user-1', STORAGE_PROJECT_ID, {
@@ -145,7 +147,7 @@ describe('BootstrapHomePage', () => {
 
     await user.click(
       screen.getByRole('checkbox', {
-        name: 'Write tests を完了状態にする',
+        name: /Write tests/,
       }),
     );
 

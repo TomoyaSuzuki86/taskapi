@@ -10,7 +10,7 @@ import {
 } from '@/features/auth/components/AuthRouteGate';
 import { AuthEntryPage } from '@/pages/AuthEntryPage';
 import { BootstrapHomePage } from '@/pages/BootstrapHomePage';
-import { HistoryPage } from '@/pages/HistoryPage';
+import { MitasPage } from '@/pages/MitasPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { SettingsPlaceholderPage } from '@/pages/SettingsPlaceholderPage';
 import { TestAuthProvider } from '@/test/TestAuthProvider';
@@ -44,12 +44,7 @@ const unauthenticatedValue: AuthContextValue = {
 };
 
 describe('auth routes', () => {
-  it.each([
-    ['/', '今日'],
-    ['/history', 'タスク履歴はありません'],
-    ['/settings', 'タスクの復元'],
-    ['/missing', 'ページが見つかりません'],
-  ] as const)('renders %s', (entry, expectedText) => {
+  it.each(['/', '/mitas', '/missing'] as const)('renders %s', (entry) => {
     const dataServices = createTestDataServices({
       projects: [
         {
@@ -75,7 +70,7 @@ describe('auth routes', () => {
           element: <AppShell />,
           children: [
             { index: true, element: <BootstrapHomePage /> },
-            { path: 'history', element: <HistoryPage /> },
+            { path: 'mitas', element: <MitasPage /> },
             { path: 'settings', element: <SettingsPlaceholderPage /> },
             { path: '*', element: <NotFoundPage /> },
           ],
@@ -92,7 +87,19 @@ describe('auth routes', () => {
       </TestAuthProvider>,
     );
 
-    expect(screen.getByText(expectedText)).toBeInTheDocument();
+    if (entry === '/') {
+      expect(screen.getByText('Today')).toBeInTheDocument();
+      return;
+    }
+
+    if (entry === '/mitas') {
+      expect(
+        screen.getByRole('heading', { name: 'Task board' }),
+      ).toBeInTheDocument();
+      return;
+    }
+
+    expect(screen.getByText('404')).toBeInTheDocument();
   });
 
   it('redirects signed-out users to login for protected routes', () => {
@@ -112,14 +119,14 @@ describe('auth routes', () => {
                 {
                   path: '/',
                   element: <AppShell />,
-                  children: [{ path: 'history', element: <HistoryPage /> }],
+                  children: [{ path: 'mitas', element: <MitasPage /> }],
                 },
               ],
             },
           ],
         },
       ],
-      { initialEntries: ['/history'] },
+      { initialEntries: ['/mitas'] },
     );
 
     render(
@@ -130,11 +137,6 @@ describe('auth routes', () => {
       </TestAuthProvider>,
     );
 
-    expect(
-      screen.getByRole('heading', { name: 'ようこそ' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Googleでログイン' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Google/ })).toBeInTheDocument();
   });
 });

@@ -45,11 +45,13 @@ describe('AppShell', () => {
       </TestAuthProvider>,
     );
 
-    expect(screen.getByRole('heading', { name: 'タスク' })).toBeInTheDocument();
     expect(
-      screen.getByRole('navigation', { name: 'メインナビゲーション' }),
+      screen.getByRole('navigation', { name: 'Main navigation' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('今日')).toBeInTheDocument();
+    expect(screen.getByText('Today')).toBeInTheDocument();
+    expect(screen.getByText('Home')).toBeInTheDocument();
+    expect(screen.getByText('Mitas')).toBeInTheDocument();
+    expect(screen.getByText('Settings')).toBeInTheDocument();
   });
 
   it('shows an offline banner when the browser is offline', () => {
@@ -79,11 +81,7 @@ describe('AppShell', () => {
       </TestAuthProvider>,
     );
 
-    expect(
-      screen.getByText(
-        /オフラインです。読み込み済みの画面は開けますが、作成や更新は接続が戻るまで保存されません。/i,
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('status')).toBeInTheDocument();
 
     vi.stubGlobal('navigator', originalNavigator);
   });

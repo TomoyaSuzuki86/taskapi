@@ -8,6 +8,7 @@ import {
 import { AuthEntryPage } from '@/pages/AuthEntryPage';
 import { BootstrapHomePage } from '@/pages/BootstrapHomePage';
 import { HistoryPage } from '@/pages/HistoryPage';
+import { MitasPage } from '@/pages/MitasPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { SettingsPlaceholderPage } from '@/pages/SettingsPlaceholderPage';
 
@@ -34,6 +35,10 @@ export const router = createBrowserRouter([
               {
                 index: true,
                 element: <BootstrapHomePage />,
+              },
+              {
+                path: 'mitas',
+                element: <MitasPage />,
               },
               {
                 path: 'history',

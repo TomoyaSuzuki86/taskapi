@@ -7,11 +7,15 @@ import { TaskCard } from '@/features/tasks/components/TaskCard';
 import { TaskCardSkeleton } from '@/features/tasks/components/TaskCardSkeleton';
 import { TaskCreateSheet } from '@/features/tasks/components/TaskCreateSheet';
 import { TaskEditSheet } from '@/features/tasks/components/TaskEditSheet';
+import {
+  normalizeTasksForDisplay,
+  startOfDay,
+  toDueDay,
+} from '@/features/tasks/task-presentation';
 import { useOwnedTasks } from '@/features/tasks/useOwnedTasks';
-import { isStorageProject } from '@/lib/tasks/storage-project';
 import { useProjects } from '@/features/projects/useProjects';
 import { useDataServices } from '@/services/useDataServices';
-import type { Project, Task, TaskStatus } from '@/types/domain';
+import type { Task, TaskStatus } from '@/types/domain';
 import styles from './BootstrapHomePage.module.css';
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
@@ -44,13 +48,7 @@ export function BootstrapHomePage() {
   );
 
   const normalizedTasks = useMemo(
-    () =>
-      sortTasksByDueDate(
-        tasks.map((task) => ({
-          ...task,
-          tags: resolveTaskTags(task, projectLookup.get(task.projectId) ?? null),
-        })),
-      ),
+    () => normalizeTasksForDisplay(tasks, projectLookup),
     [projectLookup, tasks],
   );
 
@@ -137,7 +135,7 @@ export function BootstrapHomePage() {
       });
     } catch (error) {
       setTaskActionError(
-        error instanceof Error ? error.message : 'タスクの更新に失敗しました。',
+        error instanceof Error ? error.message : 'Failed to update task.',
       );
     } finally {
       setBusyTaskId(null);
@@ -152,26 +150,26 @@ export function BootstrapHomePage() {
             <div className={styles.metrics}>
               <div className={styles.metric}>
                 <strong>{overview.openCount}</strong>
-                <span>未完了</span>
+                <span>Open</span>
               </div>
               <div className={styles.metric}>
                 <strong>{overview.overdueCount}</strong>
-                <span>期限切れ</span>
+                <span>Overdue</span>
               </div>
               <div className={styles.metric}>
                 <strong>{overview.doneCount}</strong>
-                <span>完了</span>
+                <span>Done</span>
               </div>
             </div>
 
             {visibleTags.length > 0 ? (
-              <div className={styles.tagRail} aria-label="タグフィルター">
+              <div className={styles.tagRail} aria-label="Tag filter">
                 <button
                   type="button"
                   className={`${styles.tagFilter} ${selectedTag === null ? styles.tagFilterActive : ''}`}
                   onClick={() => setSelectedTag(null)}
                 >
-                  すべて
+                  All
                 </button>
                 {visibleTags.map((tag) => (
                   <button
@@ -195,11 +193,11 @@ export function BootstrapHomePage() {
         ) : null}
 
         {renderTaskSection({
-          title: '今日',
+          title: 'Today',
           tasks: taskBuckets.today,
           status: homeStatus,
           errorMessage: homeErrorMessage,
-          emptyTitle: selectedTag ? '一致するタスクはありません' : '今日のタスクはありません',
+          emptyTitle: selectedTag ? 'No tasks for this tag.' : 'No tasks for today.',
           busyTaskId,
           onToggleTaskStatus: handleToggleTaskStatus,
           onTaskClick: (taskId) => {
@@ -212,11 +210,11 @@ export function BootstrapHomePage() {
         })}
 
         {renderTaskSection({
-          title: '近日',
+          title: 'Upcoming',
           tasks: taskBuckets.upcoming,
           status: homeStatus,
           errorMessage: homeErrorMessage,
-          emptyTitle: selectedTag ? '一致するタスクはありません' : '近日のタスクはありません',
+          emptyTitle: selectedTag ? 'No tasks for this tag.' : 'No upcoming tasks.',
           busyTaskId,
           onToggleTaskStatus: handleToggleTaskStatus,
           onTaskClick: (taskId) => {
@@ -230,11 +228,11 @@ export function BootstrapHomePage() {
 
         {(taskBuckets.later.length > 0 || homeStatus !== 'ready') &&
           renderTaskSection({
-            title: 'その他',
+            title: 'Later',
             tasks: taskBuckets.later,
             status: homeStatus,
             errorMessage: homeErrorMessage,
-            emptyTitle: 'その他のタスクはありません',
+            emptyTitle: 'No later tasks.',
             busyTaskId,
             onToggleTaskStatus: handleToggleTaskStatus,
             onTaskClick: (taskId) => {
@@ -247,7 +245,7 @@ export function BootstrapHomePage() {
           })}
       </div>
 
-      <FAB aria-label="タスクを追加" onClick={() => setIsCreateSheetOpen(true)} />
+      <FAB aria-label="Create task" onClick={() => setIsCreateSheetOpen(true)} />
       <TaskCreateSheet
         isOpen={isCreateSheetOpen}
         onClose={() => setIsCreateSheetOpen(false)}
@@ -300,7 +298,7 @@ function renderTaskSection({
         </div>
       ) : status === 'error' ? (
         <div className={styles.notice}>
-          <p>タスクの読み込みに失敗しました。</p>
+          <p>Failed to load tasks.</p>
           <p>{errorMessage}</p>
         </div>
       ) : tasks.length === 0 ? (
@@ -326,59 +324,14 @@ function renderTaskSection({
   );
 }
 
-function resolveTaskTags(task: Task, project: Project | null) {
-  if (task.tags.length > 0) {
-    return task.tags;
-  }
-
-  if (project && !isStorageProject(project.id)) {
-    return [project.name];
-  }
-
-  return [];
-}
-
 function buildTaskMeta(task: Task) {
   if (task.notes && task.notes.trim().length > 0) {
     return task.notes;
   }
 
   if (task.status === 'doing') {
-    return '進行中';
+    return 'Doing';
   }
 
   return undefined;
-}
-
-function sortTasksByDueDate(tasks: Task[]) {
-  return [...tasks].sort((left, right) => {
-    const leftDue = toDueSortValue(left.dueDate);
-    const rightDue = toDueSortValue(right.dueDate);
-
-    if (leftDue !== rightDue) {
-      return leftDue - rightDue;
-    }
-
-    return (
-      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
-    );
-  });
-}
-
-function toDueSortValue(value: string | null) {
-  return toDueDay(value) ?? Number.POSITIVE_INFINITY;
-}
-
-function toDueDay(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  return startOfDay(new Date(value).getTime());
-}
-
-function startOfDay(value: number) {
-  const date = new Date(value);
-  date.setHours(0, 0, 0, 0);
-  return date.getTime();
 }
