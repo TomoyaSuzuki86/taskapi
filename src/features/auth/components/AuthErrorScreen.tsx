@@ -18,7 +18,7 @@ export function AuthErrorScreen({ message }: AuthErrorScreenProps) {
               Firebase の設定と Authentication を確認してから、再度開いてください。
             </p>
             <Link className="text-link" to="/">
-              ログイン画面に戻る
+              トップに戻る
             </Link>
           </Card>
         </div>
