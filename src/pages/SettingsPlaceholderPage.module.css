@@ -1,0 +1,38 @@
+.container {
+  padding: 12px;
+  display: grid;
+  gap: 14px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.formStack {
+  display: grid;
+  gap: 14px;
+}
+
+.restoreList {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.notice {
+  margin-top: 12px;
+  padding: 14px;
+  background-color: #fffbe6;
+  color: #8b6700;
+  border: 1px solid #ffecb3;
+  border-radius: 12px;
+}

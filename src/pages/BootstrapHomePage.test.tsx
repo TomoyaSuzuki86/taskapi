@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import type { AuthContextValue } from '@/features/auth/auth-context';
+import { STORAGE_PROJECT_ID } from '@/lib/tasks/storage-project';
 import { BootstrapHomePage } from '@/pages/BootstrapHomePage';
 import { TestAuthProvider } from '@/test/TestAuthProvider';
 import { createTestDataServices } from '@/test/createTestDataServices';
@@ -24,7 +25,7 @@ const authenticatedValue: AuthContextValue = {
 };
 
 describe('BootstrapHomePage', () => {
-  it('shows the empty state when no projects exist', () => {
+  it('shows compact empty sections when no tasks exist', () => {
     const router = createMemoryRouter(
       [{ path: '/', element: <BootstrapHomePage /> }],
       { initialEntries: ['/'] },
@@ -38,52 +39,60 @@ describe('BootstrapHomePage', () => {
       </TestAuthProvider>,
     );
 
-    expect(screen.getByText('プロジェクトがありません')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '今日' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '近日' })).toBeInTheDocument();
+    expect(screen.getByText('今日のタスクはありません')).toBeInTheDocument();
   });
 
-  it('creates a project through the repository layer', async () => {
+  it('creates a tagged task and stays on the home screen', async () => {
     const user = userEvent.setup();
-    const createProject = vi.fn(async () => 'proj-123');
+    const createTask = vi.fn(async () => 'task-123');
     const router = createMemoryRouter(
-      [
-        { path: '/', element: <BootstrapHomePage /> },
-        { path: '/projects/:projectId', element: <div>Project route</div> },
-      ],
+      [{ path: '/', element: <BootstrapHomePage /> }],
       { initialEntries: ['/'] },
     );
 
     render(
       <TestAuthProvider value={authenticatedValue}>
         <TestDataServicesProvider
-          value={createTestDataServices({ createProject })}
+          value={createTestDataServices({ createTask })}
         >
           <RouterProvider router={router} />
         </TestDataServicesProvider>
       </TestAuthProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: '追加' }));
+    await user.click(screen.getByRole('button', { name: 'タスクを追加' }));
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText('プロジェクト名'), 'Launch plan');
-    await user.type(screen.getByLabelText('説明（任意）'), 'Ship CRUD phase');
-    await user.click(
-      screen.getByRole('button', { name: 'プロジェクトを作成' }),
-    );
+    const dialog = screen.getByRole('dialog');
+    await user.type(within(dialog).getByLabelText('タスク名'), 'Launch plan');
+    await user.type(within(dialog).getByLabelText('メモ（任意）'), 'Ship CRUD phase');
+    await user.type(within(dialog).getByLabelText('タグ'), 'frontend, urgent');
+    await user.click(within(dialog).getByRole('button', { name: 'タスクを追加' }));
 
     await waitFor(() => {
-      expect(createProject).toHaveBeenCalledWith('user-1', {
-        name: 'Launch plan',
-        description: 'Ship CRUD phase',
+      expect(createTask).toHaveBeenCalledWith('user-1', STORAGE_PROJECT_ID, {
+        title: 'Launch plan',
+        notes: 'Ship CRUD phase',
+        tags: ['frontend', 'urgent'],
+        status: 'todo',
+        dueDate: '',
       });
     });
+
+    expect(router.state.location.pathname).toBe('/');
   });
 
-  it('restores a deleted project through the repository layer', async () => {
+  it('updates a due-soon task from the home feed', async () => {
     const user = userEvent.setup();
-    const restoreProject = vi.fn(async () => undefined);
+    const updateTask = vi.fn(async () => undefined);
+    const today = new Date();
+    const dueDate = new Date(
+      Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0),
+    );
     const router = createMemoryRouter(
       [{ path: '/', element: <BootstrapHomePage /> }],
       { initialEntries: ['/'] },
@@ -93,19 +102,37 @@ describe('BootstrapHomePage', () => {
       <TestAuthProvider value={authenticatedValue}>
         <TestDataServicesProvider
           value={createTestDataServices({
-            deletedProjects: [
+            projects: [
               {
-                id: 'proj-deleted',
+                id: 'project-1',
                 ownerUid: 'user-1',
-                name: 'Archived launch',
-                description: 'Recently deleted',
+                name: 'Operations',
+                description: 'Daily work',
                 archived: false,
-                deletedAt: '2026-03-08T00:00:00.000Z',
+                deletedAt: null,
                 createdAt: '2026-03-01T00:00:00.000Z',
-                updatedAt: '2026-03-08T00:00:00.000Z',
+                updatedAt: '2026-03-12T00:00:00.000Z',
               },
             ],
-            restoreProject,
+            tasksByProjectId: {
+              'project-1': [
+                {
+                  id: 'task-1',
+                  ownerUid: 'user-1',
+                  projectId: 'project-1',
+                  title: 'Write tests',
+                  notes: 'Cover the home feed',
+                  tags: [],
+                  status: 'doing',
+                  dueDate: dueDate.toISOString(),
+                  completedAt: null,
+                  deletedAt: null,
+                  createdAt: '2026-03-10T00:00:00.000Z',
+                  updatedAt: '2026-03-13T00:00:00.000Z',
+                },
+              ],
+            },
+            updateTask,
           })}
         >
           <RouterProvider router={router} />
@@ -113,10 +140,23 @@ describe('BootstrapHomePage', () => {
       </TestAuthProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: '復元' }));
+    expect(screen.getByText('Write tests')).toBeInTheDocument();
+    expect(screen.getAllByText('#Operations').length).toBeGreaterThan(0);
+
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: 'Write tests を完了状態にする',
+      }),
+    );
 
     await waitFor(() => {
-      expect(restoreProject).toHaveBeenCalledWith('user-1', 'proj-deleted');
+      expect(updateTask).toHaveBeenCalledWith('user-1', 'project-1', 'task-1', {
+        title: 'Write tests',
+        notes: 'Cover the home feed',
+        tags: ['Operations'],
+        status: 'done',
+        dueDate: dueDate.toISOString().slice(0, 10),
+      });
     });
   });
 });

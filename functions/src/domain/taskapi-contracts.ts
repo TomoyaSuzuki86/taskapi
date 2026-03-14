@@ -46,6 +46,7 @@ export type TaskapiTask = {
   projectId: string;
   title: string;
   notes: string | null;
+  tags: string[];
   status: TaskStatus;
   dueDate: string | null;
   completedAt: string | null;
@@ -95,6 +96,7 @@ export type CreateTaskMutationPayload = {
   projectId: string;
   title: string;
   notes: string;
+  tags: string[];
   status: TaskStatus;
   dueDate: string;
 };

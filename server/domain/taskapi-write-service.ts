@@ -19,6 +19,9 @@ import {
 } from '../persistence/firestore-paths';
 import { TaskapiMutationError } from './taskapi-mutation-error';
 
+const STORAGE_PROJECT_ID = '__taskapi_storage__';
+const STORAGE_PROJECT_NAME = '__storage__';
+
 type DocumentReferenceLike = {
   path: string;
   id: string;
@@ -73,6 +76,7 @@ type TaskRecord = {
   projectId: string;
   title: string;
   notes: string | null;
+  tags: string[];
   status: 'todo' | 'doing' | 'done';
   dueDate: unknown | null;
   completedAt: unknown | null;
@@ -251,17 +255,16 @@ export class TaskapiWriteService {
     const historyEntryId = randomUUID();
 
     await this.firestore.runTransaction(async (transaction) => {
-      const projectRef = this.firestore.doc(
-        projectDocumentPath(uid, input.projectId),
+      const projectId = await ensureStorageProject(
+        transaction,
+        this.firestore,
+        uid,
+        input.projectId,
       );
-      const projectSnapshot = (await transaction.get(
-        projectRef,
-      )) as DocumentSnapshotLike;
-      assertProjectIsActive(projectSnapshot, input.projectId);
 
       transaction.set(
-        this.firestore.doc(taskDocumentPath(uid, input.projectId, taskId)),
-        buildTaskCreateRecord(uid, taskId, input),
+        this.firestore.doc(taskDocumentPath(uid, projectId, taskId)),
+        buildTaskCreateRecord(uid, projectId, taskId, input),
       );
       transaction.set(
         this.firestore.doc(historyDocumentPath(uid, historyEntryId)),
@@ -269,7 +272,7 @@ export class TaskapiWriteService {
           historyEntryId,
           'task',
           taskId,
-          input.projectId,
+          projectId,
           'create',
           input.title.trim() as string,
         ),
@@ -441,15 +444,17 @@ function buildProjectUpdateRecord(input: UpdateProjectMutationPayload) {
 
 function buildTaskCreateRecord(
   uid: string,
+  projectId: string,
   taskId: string,
   input: CreateTaskMutationPayload,
 ) {
   return {
     id: taskId,
     ownerUid: uid,
-    projectId: input.projectId,
+    projectId,
     title: input.title.trim(),
     notes: emptyToNull(input.notes ?? ''),
+    tags: normalizeTags(input.tags),
     status: input.status,
     dueDate: dateInputToTimestamp(input.dueDate ?? ''),
     completedAt: input.status === 'done' ? serverTimestamp() : null,
@@ -472,6 +477,9 @@ function buildTaskUpdatePatch(
   }
   if (input.notes !== undefined) {
     updatePatch.notes = emptyToNull(input.notes);
+  }
+  if (input.tags !== undefined) {
+    updatePatch.tags = normalizeTags(input.tags);
   }
   if (input.status !== undefined) {
     updatePatch.status = input.status;
@@ -517,6 +525,39 @@ function assertProjectIsActive(
   }
 
   return project;
+}
+
+async function ensureStorageProject(
+  transaction: TransactionLike,
+  firestore: FirestoreLike,
+  uid: string,
+  requestedProjectId: string,
+) {
+  const projectRef = firestore.doc(projectDocumentPath(uid, requestedProjectId));
+  const projectSnapshot = (await transaction.get(projectRef)) as DocumentSnapshotLike;
+
+  if (projectSnapshot.exists) {
+    assertProjectIsActive(projectSnapshot, requestedProjectId);
+    return requestedProjectId;
+  }
+
+  if (requestedProjectId !== STORAGE_PROJECT_ID) {
+    throw new TaskapiMutationError('NOT_FOUND', 'Project not found.');
+  }
+
+  transaction.set(projectRef, {
+    id: STORAGE_PROJECT_ID,
+    ownerUid: uid,
+    name: STORAGE_PROJECT_NAME,
+    description: null,
+    archived: false,
+    deletedAt: null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    system: true,
+  });
+
+  return STORAGE_PROJECT_ID;
 }
 
 function readProjectSnapshot(
@@ -588,6 +629,7 @@ function readTaskRecord(
     projectId: data.projectId,
     title: data.title,
     notes: typeof data.notes === 'string' ? data.notes : null,
+    tags: normalizeTags(data.tags),
     status: data.status,
     dueDate: data.dueDate ?? null,
     completedAt: data.completedAt ?? null,
@@ -604,6 +646,29 @@ function isTaskStatus(value: unknown): value is TaskRecord['status'] {
 function emptyToNull(value: string) {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeTags(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const uniqueTags = new Set<string>();
+
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      continue;
+    }
+
+    const normalized = item.trim();
+    if (normalized.length === 0) {
+      continue;
+    }
+
+    uniqueTags.add(normalized);
+  }
+
+  return [...uniqueTags];
 }
 
 function dateInputToTimestamp(value: string) {

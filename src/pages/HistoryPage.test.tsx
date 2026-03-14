@@ -24,7 +24,7 @@ const authenticatedValue: AuthContextValue = {
 };
 
 describe('HistoryPage', () => {
-  it('renders recent history entries in reverse chronological order', () => {
+  it('renders only task history entries', () => {
     const router = createMemoryRouter(
       [{ path: '/history', element: <HistoryPage /> }],
       { initialEntries: ['/history'] },
@@ -50,7 +50,7 @@ describe('HistoryPage', () => {
                 entityId: 'proj-1',
                 projectId: 'proj-1',
                 action: 'create',
-                title: 'Project one',
+                title: 'Legacy project',
                 createdAt: '2026-03-11T00:00:00.000Z',
               },
             ],
@@ -61,16 +61,51 @@ describe('HistoryPage', () => {
       </TestAuthProvider>,
     );
 
-    expect(screen.getByText('変更履歴')).toBeInTheDocument();
     expect(
       screen.getByText('タスク「Write tests」をステータス変更'),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText('プロジェクト「Project one」を作成'),
-    ).toBeInTheDocument();
+    expect(screen.queryByText(/プロジェクト/)).not.toBeInTheDocument();
   });
 
-  it('restores a deleted project through the existing project restore path', async () => {
+  it('restores a deleted task from task history', async () => {
+    const user = userEvent.setup();
+    const restoreTask = vi.fn(async () => undefined);
+    const router = createMemoryRouter(
+      [{ path: '/history', element: <HistoryPage /> }],
+      { initialEntries: ['/history'] },
+    );
+
+    render(
+      <TestAuthProvider value={authenticatedValue}>
+        <TestDataServicesProvider
+          value={createTestDataServices({
+            restoreTask,
+            historyEntries: [
+              {
+                id: 'history-delete-task',
+                entityType: 'task',
+                entityId: 'task-1',
+                projectId: 'proj-1',
+                action: 'delete',
+                title: 'Write tests',
+                createdAt: '2026-03-12T00:00:00.000Z',
+              },
+            ],
+          })}
+        >
+          <RouterProvider router={router} />
+        </TestDataServicesProvider>
+      </TestAuthProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: '復元' }));
+
+    await waitFor(() => {
+      expect(restoreTask).toHaveBeenCalledWith('user-1', 'proj-1', 'task-1');
+    });
+  });
+
+  it('restores a deleted legacy project from the legacy section', async () => {
     const user = userEvent.setup();
     const restoreProject = vi.fn(async () => undefined);
     const router = createMemoryRouter(
@@ -87,10 +122,10 @@ describe('HistoryPage', () => {
               {
                 id: 'history-delete-project',
                 entityType: 'project',
-                entityId: 'proj-1',
-                projectId: 'proj-1',
+                entityId: 'legacy-project',
+                projectId: 'legacy-project',
                 action: 'delete',
-                title: 'Project one',
+                title: 'Legacy project',
                 createdAt: '2026-03-12T00:00:00.000Z',
               },
             ],
@@ -101,10 +136,11 @@ describe('HistoryPage', () => {
       </TestAuthProvider>,
     );
 
+    expect(screen.getByText('旧データの復元')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '復元' }));
 
     await waitFor(() => {
-      expect(restoreProject).toHaveBeenCalledWith('user-1', 'proj-1');
+      expect(restoreProject).toHaveBeenCalledWith('user-1', 'legacy-project');
     });
   });
 });

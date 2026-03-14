@@ -44,6 +44,9 @@ import {
   mapTaskRecord,
 } from '../persistence/firestore-records';
 
+const STORAGE_PROJECT_ID = '__taskapi_storage__';
+const STORAGE_PROJECT_NAME = '__taskapi_storage__';
+
 export class TaskapiMutationUseCases {
   constructor(private readonly firestore: Firestore) {}
 
@@ -238,7 +241,7 @@ export class TaskapiMutationUseCases {
       const historyId = randomUUID();
 
       await this.firestore.runTransaction(async (transaction) => {
-        await assertProjectIsActive(
+        const projectId = await ensureTaskProject(
           transaction,
           this.firestore,
           uid,
@@ -246,13 +249,14 @@ export class TaskapiMutationUseCases {
         );
 
         transaction.set(
-          this.firestore.doc(taskDocumentPath(uid, input.projectId, taskId)),
+          this.firestore.doc(taskDocumentPath(uid, projectId, taskId)),
           {
             id: taskId,
             ownerUid: uid,
-            projectId: input.projectId,
+            projectId,
             title: input.title.trim(),
             notes: emptyToNull(input.notes),
+            tags: normalizeTags(input.tags),
             status: input.status,
             dueDate: dateInputToTimestamp(input.dueDate),
             completedAt: input.status === 'done' ? serverTimestamp() : null,
@@ -267,7 +271,7 @@ export class TaskapiMutationUseCases {
             historyId,
             'task',
             taskId,
-            input.projectId,
+            projectId,
             'create',
             input.title.trim(),
           ),
@@ -303,6 +307,7 @@ export class TaskapiMutationUseCases {
         transaction.update(taskRef, {
           title: input.title.trim(),
           notes: emptyToNull(input.notes),
+          tags: normalizeTags(input.tags),
           status: input.status,
           dueDate: dateInputToTimestamp(input.dueDate),
           completedAt: nextCompletedAt(task, input.status),
@@ -518,6 +523,47 @@ async function assertProjectIsActive(
   return project;
 }
 
+async function ensureTaskProject(
+  transaction: FirebaseFirestore.Transaction,
+  firestore: Firestore,
+  uid: string,
+  projectId: string,
+) {
+  if (projectId !== STORAGE_PROJECT_ID) {
+    await assertProjectIsActive(transaction, firestore, uid, projectId);
+    return projectId;
+  }
+
+  const projectRef = firestore.doc(projectDocumentPath(uid, STORAGE_PROJECT_ID));
+  const projectSnapshot = await transaction.get(projectRef);
+
+  if (!projectSnapshot.exists) {
+    transaction.set(projectRef, {
+      id: STORAGE_PROJECT_ID,
+      ownerUid: uid,
+      name: STORAGE_PROJECT_NAME,
+      description: null,
+      archived: false,
+      deletedAt: null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    return STORAGE_PROJECT_ID;
+  }
+
+  const project = readProject(projectSnapshot.data(), STORAGE_PROJECT_ID);
+  if (project.deletedAt !== null) {
+    transaction.update(projectRef, {
+      deletedAt: null,
+      archived: false,
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  return STORAGE_PROJECT_ID;
+}
+
 function readProject(
   record: FirebaseFirestore.DocumentData | undefined,
   fallbackId: string,
@@ -583,6 +629,21 @@ function acknowledged() {
 function emptyToNull(value: string) {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeTags(tags: string[]) {
+  const uniqueTags = new Set<string>();
+
+  for (const tag of tags) {
+    const normalized = tag.trim();
+    if (!normalized) {
+      continue;
+    }
+
+    uniqueTags.add(normalized);
+  }
+
+  return [...uniqueTags];
 }
 
 function dateInputToTimestamp(value: string) {

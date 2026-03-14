@@ -37,6 +37,7 @@ export type Task = {
   ownerUid: string;
   title: string;
   notes: string | null;
+  tags: string[];
   status: TaskStatus;
   dueDate: IsoTimestamp | null;
   completedAt: IsoTimestamp | null;
@@ -48,6 +49,7 @@ export type Task = {
 export type TaskCreateInput = {
   title: string;
   notes: string;
+  tags: string[];
   status: TaskStatus;
   dueDate: string;
 };
@@ -55,6 +57,7 @@ export type TaskCreateInput = {
 export type TaskUpdateInput = {
   title: string;
   notes: string;
+  tags: string[];
   status: TaskStatus;
   dueDate: string;
 };

@@ -1,29 +1,30 @@
 .container {
-  padding: 16px;
-}
-
-.pageTitle {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0 0 8px;
-}
-
-.pageDescription {
-  font-size: 14px;
-  color: #757575;
-  margin: 0;
-}
-
-.grid {
   display: grid;
-  gap: 16px;
-  margin-top: 16px;
+  gap: 12px;
+  padding: 12px;
+}
+
+.list {
+  display: grid;
+  gap: 12px;
 }
 
 .notice {
-  padding: 16px;
+  padding: 14px;
   background-color: #fffbe6;
-  color: #c28f00;
+  color: #8b6700;
   border: 1px solid #ffecb3;
-  border-radius: 8px;
+  border-radius: 12px;
+}
+
+.legacySection {
+  display: grid;
+  gap: 12px;
+}
+
+.legacyTitle {
+  margin: 4px 4px 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #5a6678;
 }

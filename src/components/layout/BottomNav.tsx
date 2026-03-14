@@ -1,9 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import styles from './BottomNav.module.css';
 
-const HomeIcon = () => <span aria-hidden="true">□</span>;
-const HistoryIcon = () => <span aria-hidden="true">◷</span>;
-const SettingsIcon = () => <span aria-hidden="true">⚙</span>;
+const HomeIcon = () => <span aria-hidden="true">⌂</span>;
+const SettingsIcon = () => <span aria-hidden="true">⋯</span>;
 
 export function BottomNav() {
   return (
@@ -17,15 +16,6 @@ export function BottomNav() {
       >
         <HomeIcon />
         <span className={styles.label}>ホーム</span>
-      </NavLink>
-      <NavLink
-        to="/history"
-        className={({ isActive }) =>
-          isActive ? `${styles.link} ${styles.active}` : styles.link
-        }
-      >
-        <HistoryIcon />
-        <span className={styles.label}>履歴</span>
       </NavLink>
       <NavLink
         to="/settings"

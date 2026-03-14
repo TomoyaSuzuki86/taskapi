@@ -93,6 +93,7 @@ describe('TaskapiWriteService', () => {
       projectId: 'proj-1',
       title: 'Write docs',
       notes: null,
+      tags: ['docs'],
       status: 'todo',
       dueDate: null,
       completedAt: null,
@@ -107,6 +108,7 @@ describe('TaskapiWriteService', () => {
       taskId: 'task-1',
       title: 'Write docs',
       notes: '',
+      tags: ['docs', 'review'],
       status: 'done',
       dueDate: '',
     });
@@ -136,6 +138,7 @@ describe('TaskapiWriteService', () => {
       projectId: 'proj-1',
       title: 'Write docs',
       notes: null,
+      tags: [],
       status: 'todo',
       dueDate: null,
       completedAt: null,

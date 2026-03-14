@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useAuth } from '@/features/auth/useAuth';
 import { useProjects } from '@/features/projects/useProjects';
@@ -15,7 +14,6 @@ export function ProjectCreateSheet({
   onClose,
 }: ProjectCreateSheetProps) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { createProject, isCreating } = useProjects(user!.uid);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -29,12 +27,11 @@ export function ProjectCreateSheet({
     }
 
     try {
-      const newProjectId = await createProject({ name, description });
+      await createProject({ name, description });
       setName('');
       setDescription('');
       setErrorMessage(null);
       onClose();
-      navigate(`/projects/${newProjectId}`);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -64,7 +61,7 @@ export function ProjectCreateSheet({
             id="projectDescription"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder="例: 目的や進め方のメモ"
+            placeholder="必要ならメモを残します"
             rows={3}
           />
         </div>

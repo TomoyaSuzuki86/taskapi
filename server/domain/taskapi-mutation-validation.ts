@@ -51,6 +51,7 @@ export function validateCreateTaskInput(
     projectId: readDocumentId(record, 'projectId'),
     title: readRequiredText(record, 'title'),
     notes: readOptionalText(record, 'notes'),
+    tags: readTags(record, 'tags'),
     status: readTaskStatus(record, 'status'),
     dueDate: readDateInput(record, 'dueDate'),
   };
@@ -66,6 +67,7 @@ export function validateUpdateTaskInput(
     taskId: readDocumentId(record, 'taskId'),
     title: readRequiredText(record, 'title'),
     notes: readOptionalText(record, 'notes'),
+    tags: readTags(record, 'tags'),
     status: readTaskStatus(record, 'status'),
     dueDate: readDateInput(record, 'dueDate'),
   };
@@ -182,4 +184,35 @@ function readDocumentId(record: RecordValue, fieldName: string) {
   }
 
   return value.trim();
+}
+
+function readTags(record: RecordValue, fieldName: string) {
+  const value = record[fieldName];
+
+  if (!Array.isArray(value)) {
+    throw new TaskapiMutationError(
+      'INVALID_ARGUMENT',
+      `${fieldName} must be an array of strings.`,
+    );
+  }
+
+  const uniqueTags = new Set<string>();
+
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      throw new TaskapiMutationError(
+        'INVALID_ARGUMENT',
+        `${fieldName} must contain only strings.`,
+      );
+    }
+
+    const normalized = item.trim();
+    if (normalized.length === 0) {
+      continue;
+    }
+
+    uniqueTags.add(normalized);
+  }
+
+  return [...uniqueTags];
 }

@@ -23,6 +23,7 @@ describe('createFirestoreTaskRepository', () => {
     const taskId = await repository.createTask('user-1', 'proj-1', {
       title: 'Ship write layer',
       notes: 'Move mutations server-side',
+      tags: ['backend', 'urgent'],
       status: 'doing',
       dueDate: '2026-03-20',
     });
@@ -32,6 +33,7 @@ describe('createFirestoreTaskRepository', () => {
       projectId: 'proj-1',
       title: 'Ship write layer',
       notes: 'Move mutations server-side',
+      tags: ['backend', 'urgent'],
       status: 'doing',
       dueDate: '2026-03-20',
     });

@@ -1,8 +1,12 @@
 :root {
   font-family:
-    'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic UI', 'Segoe UI', sans-serif;
+    'Aptos', 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic UI', 'Segoe UI',
+    sans-serif;
   color: #18212f;
-  background: linear-gradient(180deg, #f4f6f8 0%, #eef2f6 100%);
+  background:
+    radial-gradient(circle at top left, rgba(82, 137, 255, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(73, 211, 173, 0.14), transparent 26%),
+    linear-gradient(180deg, #f5f8fc 0%, #eef3f8 100%);
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
@@ -42,7 +46,10 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #f4f6f8;
+  background:
+    radial-gradient(circle at top left, rgba(82, 137, 255, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(73, 211, 173, 0.14), transparent 26%),
+    linear-gradient(180deg, #f5f8fc 0%, #eef3f8 100%);
 }
 
 a {
@@ -62,11 +69,11 @@ select {
 
 .app-frame {
   min-height: 100vh;
-  max-width: 1280px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0.7rem 0.75rem 0;
   display: grid;
-  gap: 1rem;
+  gap: 0.75rem;
   grid-template-rows: auto 1fr auto;
 }
 
@@ -78,16 +85,15 @@ select {
 
 .connectivity-banner {
   margin: 0;
-  padding: 0.9rem 1rem;
-  border-radius: var(--radius-control);
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
   border: 1px solid rgba(164, 93, 22, 0.18);
   background: #fff8ef;
   color: var(--color-warning);
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 600;
 }
 
-.app-header,
 .app-nav,
 .card {
   background: var(--color-surface);
@@ -95,16 +101,6 @@ select {
   box-shadow: var(--shadow-soft);
 }
 
-.app-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.25rem 1.3rem;
-  border-radius: calc(var(--radius-panel) + 2px);
-}
-
-.app-header h1,
 .section-heading h2,
 .section-heading h3,
 .card h2,
@@ -112,23 +108,6 @@ select {
   margin: 0;
 }
 
-.app-header__subtitle {
-  margin: 0.4rem 0 0;
-  color: var(--color-ink-soft);
-  font-size: 0.95rem;
-}
-
-.app-header__eyebrow,
-.section-heading__eyebrow {
-  margin: 0 0 0.28rem;
-  color: #7a8596;
-  text-transform: uppercase;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  font-weight: 700;
-}
-
-.app-header__status,
 .pill {
   display: inline-flex;
   align-items: center;
@@ -208,8 +187,8 @@ select {
 }
 
 .card {
-  padding: 1.2rem;
-  border-radius: var(--radius-panel);
+  padding: 0.95rem;
+  border-radius: 18px;
 }
 
 .card--muted {
@@ -263,14 +242,16 @@ select {
 }
 
 .button--primary {
-  background: var(--color-accent);
+  background: linear-gradient(145deg, #11213a 0%, #2355b8 100%);
   color: #ffffff;
+  box-shadow: 0 12px 24px rgba(35, 85, 184, 0.24);
 }
 
 .button--secondary {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.82);
   color: var(--color-ink);
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(17, 33, 58, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
 }
 
 .button--ghost {
@@ -294,10 +275,11 @@ select {
 .field__input {
   width: 100%;
   padding: 0.9rem 1rem;
-  border-radius: var(--radius-control);
-  border: 1px solid rgba(24, 33, 47, 0.12);
-  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid rgba(24, 33, 47, 0.1);
+  background: rgba(255, 255, 255, 0.9);
   color: var(--color-ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
 }
 
 .field__input:focus {
@@ -498,8 +480,8 @@ select {
 
 @media (min-width: 720px) {
   .app-frame {
-    padding: 1.4rem;
-    gap: 1.2rem;
+    padding: 0.9rem 1rem 0;
+    gap: 0.9rem;
   }
 
   .dashboard-grid {

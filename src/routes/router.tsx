@@ -9,7 +9,6 @@ import { AuthEntryPage } from '@/pages/AuthEntryPage';
 import { BootstrapHomePage } from '@/pages/BootstrapHomePage';
 import { HistoryPage } from '@/pages/HistoryPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
-import { ProjectDetailPage } from '@/pages/ProjectDetailPage';
 import { SettingsPlaceholderPage } from '@/pages/SettingsPlaceholderPage';
 
 export const router = createBrowserRouter([
@@ -35,10 +34,6 @@ export const router = createBrowserRouter([
               {
                 index: true,
                 element: <BootstrapHomePage />,
-              },
-              {
-                path: 'projects/:projectId',
-                element: <ProjectDetailPage />,
               },
               {
                 path: 'history',

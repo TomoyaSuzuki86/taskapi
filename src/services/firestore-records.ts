@@ -34,6 +34,7 @@ type FirestoreTaskRecord = DocumentData & {
   projectId: string;
   title: string;
   notes: string | null;
+  tags?: string[];
   status: TaskStatus;
   dueDate?: FirestoreTimestampLike;
   completedAt?: FirestoreTimestampLike;
@@ -72,6 +73,7 @@ export function mapTaskRecord(record: FirestoreTaskRecord): Task {
     projectId: record.projectId,
     title: record.title,
     notes: record.notes ?? null,
+    tags: normalizeTags(record.tags),
     status: record.status,
     dueDate: toOptionalIsoTimestamp(record.dueDate),
     completedAt: toOptionalIsoTimestamp(record.completedAt),
@@ -149,6 +151,7 @@ export function buildTaskCreateRecord(
     projectId,
     title: input.title.trim(),
     notes: emptyToNull(input.notes),
+    tags: normalizeTags(input.tags),
     status: input.status,
     dueDate: toTimestampOrNull(input.dueDate),
     completedAt: input.status === 'done' ? now : null,
@@ -162,6 +165,7 @@ export function buildTaskUpdateRecord(input: TaskUpdateInput) {
   return {
     title: input.title.trim(),
     notes: emptyToNull(input.notes),
+    tags: normalizeTags(input.tags),
     status: input.status,
     dueDate: toTimestampOrNull(input.dueDate),
     completedAt: input.status === 'done' ? serverTimestamp() : null,
@@ -205,6 +209,29 @@ export function buildHistoryRecord(
 function emptyToNull(value: string) {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeTags(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const uniqueTags = new Set<string>();
+
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      continue;
+    }
+
+    const normalized = item.trim();
+    if (normalized.length === 0) {
+      continue;
+    }
+
+    uniqueTags.add(normalized);
+  }
+
+  return [...uniqueTags];
 }
 
 function toTimestampOrNull(value: string) {

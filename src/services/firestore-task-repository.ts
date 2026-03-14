@@ -2,8 +2,8 @@ import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import type { TaskCreateInput, TaskUpdateInput } from '@/types/domain';
 import { getFirebaseFirestore } from '@/lib/firebase/firestore';
 import type { TaskRepository } from '@/services/data-services';
-import { createTaskapiWriteApi } from '@/services/taskapi-write-api';
 import { mapTaskRecord } from '@/services/firestore-records';
+import { createTaskapiWriteApi } from '@/services/taskapi-write-api';
 
 function tasksCollectionPath(ownerUid: string, projectId: string) {
   return `users/${ownerUid}/projects/${projectId}/tasks`;

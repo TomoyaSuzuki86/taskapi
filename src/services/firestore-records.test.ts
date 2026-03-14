@@ -36,6 +36,7 @@ describe('firestore record helpers', () => {
       projectId: 'proj-1',
       title: 'Task one',
       notes: 'Example notes',
+      tags: ['frontend', 'review'],
       status: 'doing',
       dueDate: Timestamp.fromDate(new Date('2026-03-20T00:00:00.000Z')),
       completedAt: null,
@@ -48,6 +49,7 @@ describe('firestore record helpers', () => {
       id: 'task-1',
       status: 'doing',
       notes: 'Example notes',
+      tags: ['frontend', 'review'],
     });
     expect(task.dueDate).toBe('2026-03-20T00:00:00.000Z');
   });
@@ -56,11 +58,13 @@ describe('firestore record helpers', () => {
     const patch = buildTaskUpdateRecord({
       title: 'Task one',
       notes: '',
+      tags: ['today'],
       status: 'todo',
       dueDate: '',
     });
 
     expect(patch.completedAt).toBeNull();
+    expect(patch.tags).toEqual(['today']);
   });
 
   it('maps history records from Firestore data', () => {

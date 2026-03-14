@@ -45,16 +45,11 @@ describe('AppShell', () => {
       </TestAuthProvider>,
     );
 
-    expect(
-      screen.getByRole('heading', { name: 'ワークスペース' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'タスク' })).toBeInTheDocument();
     expect(
       screen.getByRole('navigation', { name: 'メインナビゲーション' }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'ログアウト' }),
-    ).toBeInTheDocument();
-    expect(screen.getByText('進行中のプロジェクト')).toBeInTheDocument();
+    expect(screen.getByText('今日')).toBeInTheDocument();
   });
 
   it('shows an offline banner when the browser is offline', () => {
@@ -86,7 +81,7 @@ describe('AppShell', () => {
 
     expect(
       screen.getByText(
-        /オフラインです。保存済みの画面は開けますが、同期や更新は通信が戻るまで反映されません。/i,
+        /オフラインです。読み込み済みの画面は開けますが、作成や更新は接続が戻るまで保存されません。/i,
       ),
     ).toBeInTheDocument();
 

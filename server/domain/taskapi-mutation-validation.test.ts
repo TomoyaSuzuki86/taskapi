@@ -28,6 +28,7 @@ describe('taskapi mutation validation', () => {
         projectId: 'proj-1',
         title: '',
         notes: '',
+        tags: [],
         status: 'doing',
         dueDate: '03/20/2026',
       }),

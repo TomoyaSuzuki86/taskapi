@@ -12,7 +12,6 @@ import { AuthEntryPage } from '@/pages/AuthEntryPage';
 import { BootstrapHomePage } from '@/pages/BootstrapHomePage';
 import { HistoryPage } from '@/pages/HistoryPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
-import { ProjectDetailPage } from '@/pages/ProjectDetailPage';
 import { SettingsPlaceholderPage } from '@/pages/SettingsPlaceholderPage';
 import { TestAuthProvider } from '@/test/TestAuthProvider';
 import { createTestDataServices } from '@/test/createTestDataServices';
@@ -46,10 +45,9 @@ const unauthenticatedValue: AuthContextValue = {
 
 describe('auth routes', () => {
   it.each([
-    ['/', 'sample-project'],
-    ['/projects/sample-project', 'sample-project'],
-    ['/history', '変更履歴'],
-    ['/settings', '利用中のアカウント'],
+    ['/', '今日'],
+    ['/history', 'タスク履歴はありません'],
+    ['/settings', 'タスクの復元'],
     ['/missing', 'ページが見つかりません'],
   ] as const)('renders %s', (entry, expectedText) => {
     const dataServices = createTestDataServices({
@@ -57,8 +55,8 @@ describe('auth routes', () => {
         {
           id: 'sample-project',
           ownerUid: 'user-1',
-          name: 'sample-project',
-          description: 'Example project',
+          name: 'legacy',
+          description: 'Legacy storage',
           archived: false,
           deletedAt: null,
           createdAt: new Date().toISOString(),
@@ -77,10 +75,6 @@ describe('auth routes', () => {
           element: <AppShell />,
           children: [
             { index: true, element: <BootstrapHomePage /> },
-            {
-              path: 'projects/:projectId',
-              element: <ProjectDetailPage />,
-            },
             { path: 'history', element: <HistoryPage /> },
             { path: 'settings', element: <SettingsPlaceholderPage /> },
             { path: '*', element: <NotFoundPage /> },

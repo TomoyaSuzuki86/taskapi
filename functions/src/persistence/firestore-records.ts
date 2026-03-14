@@ -28,6 +28,7 @@ export function mapTaskRecord(record: DocumentData): TaskapiTask {
     projectId: readRequiredString(record.projectId, 'task.projectId'),
     title: readRequiredString(record.title, 'task.title'),
     notes: readOptionalString(record.notes, 'task.notes'),
+    tags: readTags(record.tags),
     status: readTaskStatus(record.status),
     dueDate: toOptionalIsoTimestamp(record.dueDate),
     completedAt: toOptionalIsoTimestamp(record.completedAt),
@@ -91,6 +92,33 @@ function readTaskStatus(value: unknown): TaskapiTask['status'] {
   }
 
   throw invalidStoredData('task.status');
+}
+
+function readTags(value: unknown) {
+  if (value === null || value === undefined) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    throw invalidStoredData('task.tags');
+  }
+
+  const uniqueTags = new Set<string>();
+
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      throw invalidStoredData('task.tags');
+    }
+
+    const normalized = item.trim();
+    if (!normalized) {
+      continue;
+    }
+
+    uniqueTags.add(normalized);
+  }
+
+  return [...uniqueTags];
 }
 
 function readHistoryEntityType(

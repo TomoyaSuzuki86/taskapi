@@ -53,6 +53,7 @@ export function validateCreateTaskInput(
     projectId: readDocumentId(record, 'projectId'),
     title: readRequiredText(record, 'title'),
     notes: readOptionalText(record, 'notes'),
+    tags: readTagList(record, 'tags'),
     status: readTaskStatus(record, 'status'),
     dueDate: readDateInput(record, 'dueDate'),
   };
@@ -68,6 +69,7 @@ export function validateUpdateTaskInput(
     taskId: readDocumentId(record, 'taskId'),
     title: readRequiredText(record, 'title'),
     notes: readOptionalText(record, 'notes'),
+    tags: readTagList(record, 'tags'),
     status: readTaskStatus(record, 'status'),
     dueDate: readDateInput(record, 'dueDate'),
   };
@@ -190,6 +192,37 @@ function readDateInput(record: RecordValue, fieldName: string) {
   }
 
   return value;
+}
+
+function readTagList(record: RecordValue, fieldName: string) {
+  const value = record[fieldName];
+
+  if (!Array.isArray(value)) {
+    throw new TaskapiContractError(
+      'INVALID_ARGUMENT',
+      `${fieldName} must be an array of strings.`,
+    );
+  }
+
+  const uniqueTags = new Set<string>();
+
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      throw new TaskapiContractError(
+        'INVALID_ARGUMENT',
+        `${fieldName} must contain only strings.`,
+      );
+    }
+
+    const normalized = item.trim();
+    if (!normalized) {
+      continue;
+    }
+
+    uniqueTags.add(normalized);
+  }
+
+  return [...uniqueTags];
 }
 
 function readDocumentId(record: RecordValue, fieldName: string) {
