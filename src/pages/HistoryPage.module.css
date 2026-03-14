@@ -1,0 +1,29 @@
+.container {
+  padding: 16px;
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.pageDescription {
+  font-size: 14px;
+  color: #757575;
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.notice {
+  padding: 16px;
+  background-color: #fffbe6;
+  color: #c28f00;
+  border: 1px solid #ffecb3;
+  border-radius: 8px;
+}

@@ -1,11 +1,12 @@
 import { Outlet, useLocation } from 'react-router-dom';
-import { AppHeader } from '@/components/layout/AppHeader';
-import { AppNav } from '@/components/layout/AppNav';
-import { Frame } from '@/components/layout/Frame';
-import { ConnectivityBanner } from '@/components/feedback/ConnectivityBanner';
-import { Button } from '@/components/ui/Button';
 import { resolveShellRouteTitle } from '@/app/route-meta';
+import { ConnectivityBanner } from '@/components/feedback/ConnectivityBanner';
+import { AppHeader } from '@/components/layout/AppHeader';
+import { BottomNav } from '@/components/layout/BottomNav';
+import { Frame } from '@/components/layout/Frame';
+import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/features/auth/useAuth';
+import styles from './AppShell.module.css';
 
 export function AppShell() {
   const location = useLocation();
@@ -29,10 +30,10 @@ export function AppShell() {
         }
       />
       <ConnectivityBanner />
-      <main className="app-shell__content">
+      <main className={styles.content}>
         <Outlet />
       </main>
-      <AppNav />
+      <BottomNav />
     </Frame>
   );
 }

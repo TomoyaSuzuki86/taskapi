@@ -100,3 +100,12 @@ export function createFirestoreDataServices(): DataServices {
     historyRepository: createFirestoreHistoryRepository(),
   };
 }
+
+export type {
+  Project,
+  Task,
+  ProjectCreateInput,
+  ProjectUpdateInput,
+  TaskCreateInput,
+  TaskUpdateInput,
+};

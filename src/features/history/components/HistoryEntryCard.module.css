@@ -1,0 +1,19 @@
+.content {
+  margin-bottom: 16px;
+}
+
+.message {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 8px;
+}
+
+.timestamp {
+  font-size: 12px;
+  color: #757575;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}

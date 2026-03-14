@@ -38,9 +38,7 @@ describe('BootstrapHomePage', () => {
       </TestAuthProvider>,
     );
 
-    expect(
-      screen.getByText('まだプロジェクトがありません'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('プロジェクトがありません')).toBeInTheDocument();
   });
 
   it('creates a project through the repository layer', async () => {
@@ -64,8 +62,13 @@ describe('BootstrapHomePage', () => {
       </TestAuthProvider>,
     );
 
+    await user.click(screen.getByRole('button', { name: '追加' }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
     await user.type(screen.getByLabelText('プロジェクト名'), 'Launch plan');
-    await user.type(screen.getByLabelText('説明'), 'Ship CRUD phase');
+    await user.type(screen.getByLabelText('説明（任意）'), 'Ship CRUD phase');
     await user.click(
       screen.getByRole('button', { name: 'プロジェクトを作成' }),
     );

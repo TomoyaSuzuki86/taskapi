@@ -1,0 +1,16 @@
+.container {
+  padding: 16px;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.notice {
+  padding: 16px;
+  background-color: #fffbe6;
+  color: #c28f00;
+  border: 1px solid #ffecb3;
+  border-radius: 8px;
+}

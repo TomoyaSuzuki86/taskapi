@@ -26,32 +26,32 @@ const authenticatedValue: AuthContextValue = {
 describe('ProjectDetailPage', () => {
   it('creates a task through the repository layer', async () => {
     const user = userEvent.setup();
-    const createTask = vi.fn(async () => 'task-123');
+    const createTask = vi.fn(async () => 'task-created');
     const router = createMemoryRouter(
       [{ path: '/projects/:projectId', element: <ProjectDetailPage /> }],
-      { initialEntries: ['/projects/proj-1'] },
+      { initialEntries: ['/projects/project-1'] },
     );
 
     render(
       <TestAuthProvider value={authenticatedValue}>
         <TestDataServicesProvider
           value={createTestDataServices({
-            projectById: {
-              'proj-1': {
-                id: 'proj-1',
+            createTask,
+            projects: [
+              {
+                id: 'project-1',
                 ownerUid: 'user-1',
                 name: 'Project one',
                 description: 'Scoped to user-1',
                 archived: false,
                 deletedAt: null,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                createdAt: '2026-03-01T00:00:00.000Z',
+                updatedAt: '2026-03-08T00:00:00.000Z',
               },
-            },
+            ],
             tasksByProjectId: {
-              'proj-1': [],
+              'project-1': [],
             },
-            createTask,
           })}
         >
           <RouterProvider router={router} />
@@ -59,18 +59,23 @@ describe('ProjectDetailPage', () => {
       </TestAuthProvider>,
     );
 
+    await user.click(screen.getByRole('button', { name: '追加' }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
     await user.type(screen.getByLabelText('タスク名'), 'Write tests');
-    await user.type(screen.getByLabelText('メモ'), 'Cover create flow');
+    await user.type(screen.getByLabelText('メモ（任意）'), 'Cover create flow');
     await user.selectOptions(screen.getByLabelText('ステータス'), 'doing');
-    await user.type(screen.getByLabelText('期限'), '2026-03-20');
+    await user.type(screen.getByLabelText('期限（任意）'), '2026-03-15');
     await user.click(screen.getByRole('button', { name: 'タスクを追加' }));
 
     await waitFor(() => {
-      expect(createTask).toHaveBeenCalledWith('user-1', 'proj-1', {
+      expect(createTask).toHaveBeenCalledWith('user-1', 'project-1', {
         title: 'Write tests',
         notes: 'Cover create flow',
         status: 'doing',
-        dueDate: '2026-03-20',
+        dueDate: '2026-03-15',
       });
     });
   });
@@ -80,36 +85,36 @@ describe('ProjectDetailPage', () => {
     const restoreTask = vi.fn(async () => undefined);
     const router = createMemoryRouter(
       [{ path: '/projects/:projectId', element: <ProjectDetailPage /> }],
-      { initialEntries: ['/projects/proj-1'] },
+      { initialEntries: ['/projects/project-1'] },
     );
 
     render(
       <TestAuthProvider value={authenticatedValue}>
         <TestDataServicesProvider
           value={createTestDataServices({
-            projectById: {
-              'proj-1': {
-                id: 'proj-1',
+            projects: [
+              {
+                id: 'project-1',
                 ownerUid: 'user-1',
                 name: 'Project one',
                 description: 'Scoped to user-1',
                 archived: false,
                 deletedAt: null,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                createdAt: '2026-03-01T00:00:00.000Z',
+                updatedAt: '2026-03-08T00:00:00.000Z',
               },
-            },
+            ],
             tasksByProjectId: {
-              'proj-1': [],
+              'project-1': [],
             },
             deletedTasksByProjectId: {
-              'proj-1': [
+              'project-1': [
                 {
-                  id: 'task-restore',
+                  id: 'task-deleted',
                   ownerUid: 'user-1',
-                  projectId: 'proj-1',
-                  title: 'Restore me',
-                  notes: null,
+                  projectId: 'project-1',
+                  title: 'Deleted task',
+                  notes: 'Recently deleted',
                   status: 'todo',
                   dueDate: null,
                   completedAt: null,
@@ -132,8 +137,8 @@ describe('ProjectDetailPage', () => {
     await waitFor(() => {
       expect(restoreTask).toHaveBeenCalledWith(
         'user-1',
-        'proj-1',
-        'task-restore',
+        'project-1',
+        'task-deleted',
       );
     });
   });

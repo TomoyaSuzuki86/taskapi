@@ -1,0 +1,32 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #3c4043;
+}
+
+.select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+  appearance: none; /* デフォルトの矢印を非表示 */
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%20197.3L159.1%2069.5c-3.2-3.2-8.4-3.2-11.6%200L5.4%20197.3c-3.2%203.2-3.2%208.4%200%2011.6l15.5%2015.5c3.2%203.2%208.4%203.2%2011.6%200l120.7-120.7c3.2-3.2%208.4-3.2%2011.6%200l120.7%20120.7c3.2%203.2%208.4%203.2%2011.6%200l15.5-15.5c3.2-3.2%203.2-8.4%200-11.6z%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px;
+  padding-right: 30px; /* 矢印のスペース */
+}
+
+.select:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}

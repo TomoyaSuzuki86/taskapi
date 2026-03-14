@@ -3,7 +3,7 @@ import { SkeletonBlock } from '@/components/skeleton/SkeletonBlock';
 
 export function AuthShellSkeleton() {
   return (
-    <Card tone="muted">
+    <Card variant="muted">
       <div className="stack">
         <SkeletonBlock className="skeleton--title" />
         <SkeletonBlock className="skeleton--body" />

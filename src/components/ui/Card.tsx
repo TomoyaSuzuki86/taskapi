@@ -1,9 +1,19 @@
 import type { PropsWithChildren } from 'react';
+import styles from './Card.module.css';
 
-type CardProps = PropsWithChildren<{
-  tone?: 'default' | 'muted';
-}>;
+type CardVariant = 'default' | 'muted';
 
-export function Card({ children, tone = 'default' }: CardProps) {
-  return <section className={`card card--${tone}`}>{children}</section>;
+interface CardProps {
+  variant?: CardVariant;
+}
+
+export function Card({
+  children,
+  variant = 'default',
+}: PropsWithChildren<CardProps>) {
+  return (
+    <section className={`${styles.card} ${styles[variant]}`}>
+      {children}
+    </section>
+  );
 }

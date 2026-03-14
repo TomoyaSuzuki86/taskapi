@@ -11,6 +11,8 @@ export function useTasks(ownerUid: string, projectId: string) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [busyTaskId, setBusyTaskId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false); // 追加
+  const [isDeleting, setIsDeleting] = useState(false); // 追加
 
   useEffect(() => {
     setStatus('loading');
@@ -54,6 +56,8 @@ export function useTasks(ownerUid: string, projectId: string) {
       status,
       errorMessage,
       isCreating,
+      isUpdating, // 追加
+      isDeleting, // 追加
       busyTaskId,
       createTask: async (input: TaskCreateInput) => {
         setIsCreating(true);
@@ -69,6 +73,7 @@ export function useTasks(ownerUid: string, projectId: string) {
         }
       },
       updateTask: async (taskId: string, input: TaskUpdateInput) => {
+        setIsUpdating(true); // 追加
         setBusyTaskId(taskId);
         setErrorMessage(null);
 
@@ -78,10 +83,12 @@ export function useTasks(ownerUid: string, projectId: string) {
           setErrorMessage(toMessage(error));
           throw error;
         } finally {
+          setIsUpdating(false); // 追加
           setBusyTaskId(null);
         }
       },
       deleteTask: async (taskId: string) => {
+        setIsDeleting(true); // 追加
         setBusyTaskId(taskId);
         setErrorMessage(null);
 
@@ -91,6 +98,7 @@ export function useTasks(ownerUid: string, projectId: string) {
           setErrorMessage(toMessage(error));
           throw error;
         } finally {
+          setIsDeleting(false); // 追加
           setBusyTaskId(null);
         }
       },
@@ -113,6 +121,8 @@ export function useTasks(ownerUid: string, projectId: string) {
       deletedTasks,
       errorMessage,
       isCreating,
+      isUpdating, // 追加
+      isDeleting, // 追加
       ownerUid,
       projectId,
       taskRepository,

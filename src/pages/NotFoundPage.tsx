@@ -8,7 +8,7 @@ export function NotFoundPage() {
         <p className="section-heading__eyebrow">404</p>
         <h2>ページが見つかりません</h2>
         <p className="muted-copy">
-          指定された画面は存在しないか、利用できなくなっています。
+          指定されたページは利用できないか、移動された可能性があります。
         </p>
         <Link className="text-link" to="/">
           ホームへ戻る

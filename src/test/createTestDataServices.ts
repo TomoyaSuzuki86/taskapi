@@ -108,10 +108,7 @@ export function createTestDataServices(
       },
       createTask:
         options.createTask ??
-        (async (ownerUid, projectId, input) => {
-          void ownerUid;
-          void projectId;
-          void input;
+        (async () => {
           return 'task-created';
         }),
       updateTask:

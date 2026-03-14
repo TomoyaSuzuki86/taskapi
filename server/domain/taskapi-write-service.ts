@@ -129,12 +129,7 @@ export class TaskapiWriteService {
       )) as DocumentSnapshotLike;
       const project = readProjectSnapshot(projectSnapshot, input.projectId);
 
-      transaction.update(projectRef, {
-        name: input.name.trim(),
-        description: emptyToNull(input.description),
-        archived: input.archived,
-        updatedAt: serverTimestamp(),
-      });
+      transaction.update(projectRef, buildProjectUpdateRecord(input));
       const historyEntryId = randomUUID();
       transaction.set(
         this.firestore.doc(historyDocumentPath(uid, historyEntryId)),
@@ -144,7 +139,7 @@ export class TaskapiWriteService {
           project.id,
           project.id,
           'update',
-          input.name.trim(),
+          input.name?.trim() ?? project.name, // input.nameがundefinedの場合を考慮
         ),
       );
     });
@@ -276,7 +271,7 @@ export class TaskapiWriteService {
           taskId,
           input.projectId,
           'create',
-          input.title.trim(),
+          input.title.trim() as string,
         ),
       );
     });
@@ -312,7 +307,7 @@ export class TaskapiWriteService {
           task.id,
           input.projectId,
           'update',
-          input.title.trim(),
+          input.title?.trim() ?? task.title, // input.titleがundefinedの場合を考慮
         ),
       );
 
@@ -326,7 +321,7 @@ export class TaskapiWriteService {
             task.id,
             input.projectId,
             'status_change',
-            `${input.title.trim()} -> ${input.status}`,
+            `${input.title?.trim() ?? task.title} -> ${input.status}`, // input.titleがundefinedの場合を考慮
           ),
         );
       }
@@ -418,12 +413,30 @@ function buildProjectCreateRecord(
     id: projectId,
     ownerUid: uid,
     name: input.name.trim(),
-    description: emptyToNull(input.description),
+    description: emptyToNull(input.description ?? ''),
     archived: false,
     deletedAt: null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
+}
+
+function buildProjectUpdateRecord(input: UpdateProjectMutationPayload) {
+  const record: Record<string, unknown> = {
+    updatedAt: serverTimestamp(),
+  };
+
+  if (input.name !== undefined) {
+    record.name = input.name.trim();
+  }
+  if (input.description !== undefined) {
+    record.description = emptyToNull(input.description);
+  }
+  if (input.archived !== undefined) {
+    record.archived = input.archived;
+  }
+
+  return record;
 }
 
 function buildTaskCreateRecord(
@@ -436,9 +449,9 @@ function buildTaskCreateRecord(
     ownerUid: uid,
     projectId: input.projectId,
     title: input.title.trim(),
-    notes: emptyToNull(input.notes),
+    notes: emptyToNull(input.notes ?? ''),
     status: input.status,
-    dueDate: dateInputToTimestamp(input.dueDate),
+    dueDate: dateInputToTimestamp(input.dueDate ?? ''),
     completedAt: input.status === 'done' ? serverTimestamp() : null,
     deletedAt: null,
     createdAt: serverTimestamp(),
@@ -450,14 +463,25 @@ function buildTaskUpdatePatch(
   existingTask: TaskRecord,
   input: UpdateTaskMutationPayload,
 ) {
-  return {
-    title: input.title.trim(),
-    notes: emptyToNull(input.notes),
-    status: input.status,
-    dueDate: dateInputToTimestamp(input.dueDate),
-    completedAt: nextCompletedAt(existingTask, input.status),
+  const updatePatch: Record<string, unknown> = {
     updatedAt: serverTimestamp(),
   };
+
+  if (input.title !== undefined) {
+    updatePatch.title = input.title.trim();
+  }
+  if (input.notes !== undefined) {
+    updatePatch.notes = emptyToNull(input.notes);
+  }
+  if (input.status !== undefined) {
+    updatePatch.status = input.status;
+    updatePatch.completedAt = nextCompletedAt(existingTask, input.status);
+  }
+  if (input.dueDate !== undefined) {
+    updatePatch.dueDate = dateInputToTimestamp(input.dueDate);
+  }
+
+  return updatePatch;
 }
 
 function buildHistoryRecord(

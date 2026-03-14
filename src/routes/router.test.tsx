@@ -46,9 +46,9 @@ const unauthenticatedValue: AuthContextValue = {
 
 describe('auth routes', () => {
   it.each([
-    ['/', '進行中のプロジェクト'],
+    ['/', 'sample-project'],
     ['/projects/sample-project', 'sample-project'],
-    ['/history', '更新履歴'],
+    ['/history', '変更履歴'],
     ['/settings', '利用中のアカウント'],
     ['/missing', 'ページが見つかりません'],
   ] as const)('renders %s', (entry, expectedText) => {
