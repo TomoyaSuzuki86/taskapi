@@ -18,9 +18,11 @@ import {
   tasksCollectionPath,
 } from '../persistence/firestore-paths';
 import { TaskapiMutationError } from './taskapi-mutation-error';
-
-const STORAGE_PROJECT_ID = '__taskapi_storage__';
-const STORAGE_PROJECT_NAME = '__storage__';
+import {
+  buildStorageProjectRecord,
+  buildStorageProjectRestorePatch,
+  STORAGE_PROJECT_ID,
+} from '../../src/lib/tasks/storage-project';
 
 type DocumentReferenceLike = {
   path: string;
@@ -537,7 +539,26 @@ async function ensureStorageProject(
   const projectSnapshot = (await transaction.get(projectRef)) as DocumentSnapshotLike;
 
   if (projectSnapshot.exists) {
-    assertProjectIsActive(projectSnapshot, requestedProjectId);
+    const project = readProjectSnapshot(projectSnapshot, requestedProjectId);
+
+    if (requestedProjectId === STORAGE_PROJECT_ID) {
+      if (project.deletedAt) {
+        transaction.update(
+          projectRef,
+          buildStorageProjectRestorePatch(serverTimestamp()),
+        );
+      }
+
+      return STORAGE_PROJECT_ID;
+    }
+
+    if (project.deletedAt) {
+      throw new TaskapiMutationError(
+        'FAILED_PRECONDITION',
+        'Restore the parent project before changing its tasks.',
+      );
+    }
+
     return requestedProjectId;
   }
 
@@ -545,17 +566,8 @@ async function ensureStorageProject(
     throw new TaskapiMutationError('NOT_FOUND', 'Project not found.');
   }
 
-  transaction.set(projectRef, {
-    id: STORAGE_PROJECT_ID,
-    ownerUid: uid,
-    name: STORAGE_PROJECT_NAME,
-    description: null,
-    archived: false,
-    deletedAt: null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    system: true,
-  });
+  const timestamp = serverTimestamp();
+  transaction.set(projectRef, buildStorageProjectRecord(uid, timestamp));
 
   return STORAGE_PROJECT_ID;
 }

@@ -1,6 +1,7 @@
 // @vitest-environment node
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { STORAGE_PROJECT_ID } from '../../../src/lib/tasks/storage-project';
 import { TaskapiMutationUseCases } from './taskapi-mutation-use-cases';
 
 type MockDocument = {
@@ -208,5 +209,41 @@ describe('TaskapiMutationUseCases', () => {
         message: 'Stored project data is invalid.',
       },
     });
+  });
+
+  it('restores a deleted storage project before creating a task', async () => {
+    const harness = createFirestoreHarness();
+    harness.reads.set(`users/user-1/projects/${STORAGE_PROJECT_ID}`, {
+      id: STORAGE_PROJECT_ID,
+      ownerUid: 'user-1',
+      name: '__storage__',
+      description: null,
+      archived: true,
+      deletedAt: '2026-03-08T00:00:00.000Z',
+      createdAt: '2026-03-08T00:00:00.000Z',
+      updatedAt: '2026-03-08T00:00:00.000Z',
+    });
+
+    const service = new TaskapiMutationUseCases(harness.firestore as never);
+    const result = await service.createTask('user-1', {
+      projectId: STORAGE_PROJECT_ID,
+      title: 'Inbox item',
+      notes: '',
+      tags: ['inbox'],
+      status: 'todo',
+      dueDate: '',
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      data: {
+        taskId: expect.any(String),
+      },
+    });
+    expect(harness.updates).toHaveLength(1);
+    expect(harness.updates[0]?.path).toBe(
+      `users/user-1/projects/${STORAGE_PROJECT_ID}`,
+    );
+    expect(harness.sets).toHaveLength(2);
   });
 });

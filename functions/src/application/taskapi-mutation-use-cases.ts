@@ -43,9 +43,11 @@ import {
   mapProjectRecord,
   mapTaskRecord,
 } from '../persistence/firestore-records';
-
-const STORAGE_PROJECT_ID = '__taskapi_storage__';
-const STORAGE_PROJECT_NAME = '__taskapi_storage__';
+import {
+  buildStorageProjectRecord,
+  buildStorageProjectRestorePatch,
+  STORAGE_PROJECT_ID,
+} from '../../../src/lib/tasks/storage-project';
 
 export class TaskapiMutationUseCases {
   constructor(private readonly firestore: Firestore) {}
@@ -538,27 +540,15 @@ async function ensureTaskProject(
   const projectSnapshot = await transaction.get(projectRef);
 
   if (!projectSnapshot.exists) {
-    transaction.set(projectRef, {
-      id: STORAGE_PROJECT_ID,
-      ownerUid: uid,
-      name: STORAGE_PROJECT_NAME,
-      description: null,
-      archived: false,
-      deletedAt: null,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+    const timestamp = serverTimestamp();
+    transaction.set(projectRef, buildStorageProjectRecord(uid, timestamp));
 
     return STORAGE_PROJECT_ID;
   }
 
   const project = readProject(projectSnapshot.data(), STORAGE_PROJECT_ID);
   if (project.deletedAt !== null) {
-    transaction.update(projectRef, {
-      deletedAt: null,
-      archived: false,
-      updatedAt: serverTimestamp(),
-    });
+    transaction.update(projectRef, buildStorageProjectRestorePatch(serverTimestamp()));
   }
 
   return STORAGE_PROJECT_ID;
