@@ -143,3 +143,35 @@ The MCP-readiness refactor keeps current app behavior unchanged while preparing 
 - shared query services live in [taskapi-query-service.ts](/C:/Users/tomo1/Documents/taskapi/functions/src/application/taskapi-query-service.ts)
 - callable transport adapters live in [callable-handlers.ts](/C:/Users/tomo1/Documents/taskapi/functions/src/transport/callable-handlers.ts)
 - the planned MCP tool surface is documented in [mcp-tool-surface.md](/C:/Users/tomo1/Documents/taskapi/docs/design/mcp-tool-surface.md)
+
+## Remote MCP deployment
+
+The repo now includes a minimal Cloud Run-ready container for the remote MCP HTTP transport.
+
+Local start:
+
+```bash
+TASKAPI_MCP_UID=<firebase-auth-uid> pnpm mcp:http:start
+```
+
+Cloud Run example:
+
+```bash
+gcloud run deploy taskapi-mcp \
+  --project taskapi-489600 \
+  --region asia-northeast1 \
+  --source . \
+  --allow-unauthenticated \
+  --set-env-vars TASKAPI_MCP_UID=<firebase-auth-uid>,TASKAPI_MCP_HOST=0.0.0.0,TASKAPI_MCP_PATH=/mcp,TASKAPI_MCP_PUBLIC_BASE_URL=<https-base-url>,TASKAPI_MCP_OAUTH_APPROVAL_SECRET=<single-user-secret>,TASKAPI_MCP_OAUTH_TOKEN_SECRET=<long-random-secret>
+```
+
+Notes:
+
+- Cloud Run injects `PORT`, and the MCP HTTP server already uses it.
+- `TASKAPI_MCP_HOST=0.0.0.0` is required on Cloud Run so the container listener is reachable from the platform health checks.
+- The current transport is single-user and bound to one fixed Firebase `uid`.
+- ChatGPT connectivity needs a public HTTPS endpoint, so the service itself remains publicly reachable while `/mcp` is protected by OAuth bearer tokens.
+- `TASKAPI_MCP_PUBLIC_BASE_URL` must match the public HTTPS origin that ChatGPT will reach.
+- `TASKAPI_MCP_OAUTH_APPROVAL_SECRET` is the single-user secret shown on the approval page during OAuth authorization.
+- `TASKAPI_MCP_OAUTH_TOKEN_SECRET` is used to sign access and refresh tokens. Rotate it if exposed.
+- ChatGPT registration should point at `<https-base-url>/mcp` and use `OAuth`, not `No Authentication`.

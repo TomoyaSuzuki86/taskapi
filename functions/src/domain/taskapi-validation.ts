@@ -197,6 +197,10 @@ function readDateInput(record: RecordValue, fieldName: string) {
 function readTagList(record: RecordValue, fieldName: string) {
   const value = record[fieldName];
 
+  if (typeof value === 'undefined') {
+    return [];
+  }
+
   if (!Array.isArray(value)) {
     throw new TaskapiContractError(
       'INVALID_ARGUMENT',

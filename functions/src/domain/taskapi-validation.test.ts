@@ -5,6 +5,7 @@ import {
   requireAuthenticatedUid,
   validateChangeTaskStatusInput,
   validateCreateTaskInput,
+  validateUpdateTaskInput,
 } from './taskapi-validation';
 import { TaskapiContractError } from './taskapi-contracts';
 
@@ -47,5 +48,45 @@ describe('taskapi validation', () => {
       expect(error).toBeInstanceOf(TaskapiContractError);
       expect((error as TaskapiContractError).code).toBe('UNAUTHENTICATED');
     }
+  });
+
+  it('defaults omitted tags to an empty list for task mutations', () => {
+    expect(
+      validateCreateTaskInput({
+        projectId: 'proj-1',
+        title: 'Inbox task',
+        notes: '',
+        status: 'todo',
+        dueDate: '',
+      }),
+    ).toEqual({
+      projectId: 'proj-1',
+      title: 'Inbox task',
+      notes: '',
+      tags: [],
+      status: 'todo',
+      dueDate: '',
+    });
+  });
+
+  it('defaults omitted tags to an empty list for task updates', () => {
+    expect(
+      validateUpdateTaskInput({
+        projectId: 'proj-1',
+        taskId: 'task-1',
+        title: 'Inbox task',
+        notes: '',
+        status: 'todo',
+        dueDate: '',
+      }),
+    ).toEqual({
+      projectId: 'proj-1',
+      taskId: 'task-1',
+      title: 'Inbox task',
+      notes: '',
+      tags: [],
+      status: 'todo',
+      dueDate: '',
+    });
   });
 });

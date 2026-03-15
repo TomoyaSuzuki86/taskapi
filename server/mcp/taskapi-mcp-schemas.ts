@@ -33,6 +33,7 @@ const taskSchema = z.object({
   projectId: z.string(),
   title: z.string(),
   notes: z.string().nullable(),
+  tags: z.array(z.string()),
   status: taskStatusSchema,
   dueDate: z.string().nullable(),
   completedAt: z.string().nullable(),
@@ -118,6 +119,10 @@ export const createTaskInputSchema = {
   projectId: z.string().describe('Parent project document id'),
   title: z.string().describe('Task title'),
   notes: z.string().describe('Task notes, empty string allowed'),
+  tags: z
+    .array(z.string())
+    .optional()
+    .describe('Task tags as an array of strings, optional'),
   status: taskStatusSchema.describe('Task status'),
   dueDate: z
     .string()
@@ -129,6 +134,10 @@ export const updateTaskInputSchema = {
   taskId: z.string().describe('Task document id'),
   title: z.string().describe('Task title'),
   notes: z.string().describe('Task notes, empty string allowed'),
+  tags: z
+    .array(z.string())
+    .optional()
+    .describe('Task tags as an array of strings, optional'),
   status: taskStatusSchema.describe('Task status'),
   dueDate: z
     .string()

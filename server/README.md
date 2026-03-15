@@ -7,4 +7,4 @@ This `server/` tree remains only as local compatibility/reference code for root-
 - `api/` contains legacy callable-oriented references
 - `domain/` contains legacy write-path references
 - `persistence/` contains shared path helpers mirrored for local coverage
-- `mcp/` remains reserved for a later phase
+- `mcp/` contains the local stdio and remote streamable HTTP MCP transports that reuse shared application services

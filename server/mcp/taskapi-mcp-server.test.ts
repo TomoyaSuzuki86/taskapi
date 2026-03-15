@@ -4,15 +4,59 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { describe, expect, it } from 'vitest';
 import type {
+  ChangeTaskStatusMutationPayload,
+  CreateTaskMutationPayload,
   GetProjectQueryResult,
   ListHistoryQueryResult,
   ListProjectsQueryResult,
   ListTasksQueryResult,
+  ProjectCreateInput,
+  ProjectMutationPayload,
+  TaskMutationPayload,
+  UpdateProjectMutationPayload,
+  UpdateTaskMutationPayload,
 } from '../../functions/src/domain/taskapi-contracts';
 import { createTaskapiMcpServer } from './taskapi-mcp-server';
 
 function createServerHarness() {
-  const mutationUseCases = {
+  const mutationUseCases: {
+    createProject: (
+      uid: string,
+      input: ProjectCreateInput,
+    ) => Promise<{ ok: true; data: { projectId: string } }>;
+    updateProject: (
+      uid: string,
+      input: UpdateProjectMutationPayload,
+    ) => Promise<{ ok: true; data: { acknowledged: true } }>;
+    deleteProject: (
+      uid: string,
+      input: ProjectMutationPayload,
+    ) => Promise<{ ok: true; data: { acknowledged: true } }>;
+    restoreProject: (
+      uid: string,
+      input: ProjectMutationPayload,
+    ) => Promise<{ ok: true; data: { acknowledged: true } }>;
+    createTask: (
+      uid: string,
+      input: CreateTaskMutationPayload,
+    ) => Promise<{ ok: true; data: { taskId: string } }>;
+    updateTask: (
+      uid: string,
+      input: UpdateTaskMutationPayload,
+    ) => Promise<{ ok: true; data: { acknowledged: true } }>;
+    deleteTask: (
+      uid: string,
+      input: TaskMutationPayload,
+    ) => Promise<{ ok: true; data: { acknowledged: true } }>;
+    restoreTask: (
+      uid: string,
+      input: TaskMutationPayload,
+    ) => Promise<{ ok: true; data: { acknowledged: true } }>;
+    changeTaskStatus: (
+      uid: string,
+      input: ChangeTaskStatusMutationPayload,
+    ) => Promise<{ ok: true; data: { acknowledged: true } }>;
+  } = {
     createProject: async () => ({
       ok: true as const,
       data: { projectId: 'proj-1' },
@@ -231,6 +275,97 @@ describe('taskapi MCP server', () => {
       error: {
         code: 'INTERNAL',
         message: 'History query failed.',
+      },
+    });
+
+    await client.close();
+    await harness.server.close();
+  });
+
+  it('passes tags through create_task when provided', async () => {
+    const harness = createServerHarness();
+    let receivedTags: string[] | null = null;
+    harness.mutationUseCases.createTask = async (_uid, input) => {
+      receivedTags = input.tags;
+      return {
+        ok: true as const,
+        data: { taskId: 'task-1' },
+      };
+    };
+
+    const client = new Client({
+      name: 'taskapi-mcp-test-client',
+      version: '1.0.0',
+    });
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+
+    await harness.server.connect(serverTransport);
+    await client.connect(clientTransport);
+
+    const result = await client.callTool({
+      name: 'create_task',
+      arguments: {
+        projectId: 'proj-1',
+        title: 'Tagged task',
+        notes: '',
+        tags: ['frontend', ' urgent ', 'frontend'],
+        status: 'todo',
+        dueDate: '',
+      },
+    });
+
+    expect(receivedTags).toEqual(['frontend', 'urgent']);
+    const structuredContent = readStructuredContent(result);
+    expect(structuredContent).toEqual({
+      ok: true,
+      data: {
+        taskId: 'task-1',
+      },
+    });
+
+    await client.close();
+    await harness.server.close();
+  });
+
+  it('defaults omitted tags to an empty list for create_task over MCP', async () => {
+    const harness = createServerHarness();
+    let receivedTags: string[] | null = null;
+    harness.mutationUseCases.createTask = async (_uid, input) => {
+      receivedTags = input.tags;
+      return {
+        ok: true as const,
+        data: { taskId: 'task-1' },
+      };
+    };
+
+    const client = new Client({
+      name: 'taskapi-mcp-test-client',
+      version: '1.0.0',
+    });
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+
+    await harness.server.connect(serverTransport);
+    await client.connect(clientTransport);
+
+    const result = await client.callTool({
+      name: 'create_task',
+      arguments: {
+        projectId: 'proj-1',
+        title: 'Inbox task',
+        notes: '',
+        status: 'todo',
+        dueDate: '',
+      },
+    });
+
+    expect(receivedTags).toEqual([]);
+    const structuredContent = readStructuredContent(result);
+    expect(structuredContent).toEqual({
+      ok: true,
+      data: {
+        taskId: 'task-1',
       },
     });
 

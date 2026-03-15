@@ -4,29 +4,41 @@ MCP Server Setup
 1. Purpose
 ----------
 
-taskapi now includes a minimal MCP stdio server under `server/mcp/`.
+taskapi now includes two MCP transports under `server/mcp/`:
 
-This transport:
+* `stdio` for local MCP clients
+* `streamable HTTP` for remote MCP clients such as ChatGPT Web developer mode
 
-* reuses the shared project/task/history use cases and query services,
-* returns the same machine-oriented `MutationResult<T>` envelopes as callable Functions,
-* does not change the SPA, PWA, auth flow, or client-side Firestore reads used by the app.
+Both transports:
 
-2. Entry point
---------------
+* reuse the shared project/task/history use cases and query services,
+* return the same machine-oriented `MutationResult<T>` envelopes as callable Functions,
+* do not change the SPA, PWA, auth flow, or client-side Firestore reads used by the app.
 
-Start the MCP server with:
+2. Entry points
+---------------
+
+Start the local stdio server:
 
 ```bash
 pnpm mcp:start
 ```
 
-The entrypoint is `server/mcp/index.ts`.
+Start the remote streamable HTTP server:
+
+```bash
+pnpm mcp:http:start
+```
+
+Entrypoints:
+
+* `server/mcp/index.ts`
+* `server/mcp/http-server.ts`
 
 3. Required environment
 -----------------------
 
-Set the single-user owner uid before starting the server:
+Set the single-user owner uid before starting either transport:
 
 ```bash
 TASKAPI_MCP_UID=<firebase-auth-uid>
@@ -34,6 +46,33 @@ TASKAPI_MCP_UID=<firebase-auth-uid>
 
 The MCP server is intentionally single-user.
 It does not accept arbitrary caller-supplied user ids.
+
+Optional HTTP transport settings:
+
+```bash
+TASKAPI_MCP_HOST=127.0.0.1
+TASKAPI_MCP_PORT=8787
+TASKAPI_MCP_PATH=/mcp
+```
+
+`PORT` is also accepted as a fallback for the HTTP server.
+
+Optional OAuth settings for the remote HTTP transport:
+
+```bash
+TASKAPI_MCP_PUBLIC_BASE_URL=https://taskapi-mcp.example.com
+TASKAPI_MCP_OAUTH_APPROVAL_SECRET=<single-user-secret>
+TASKAPI_MCP_OAUTH_TOKEN_SECRET=<long-random-secret>
+```
+
+When all three OAuth values are present, `/mcp` requires bearer tokens and the server exposes:
+
+* `/.well-known/oauth-protected-resource/mcp`
+* `/.well-known/oauth-authorization-server`
+* `/register`
+* `/authorize`
+* `/token`
+* `/oauth/approve`
 
 4. Firestore credentials
 ------------------------
@@ -46,7 +85,42 @@ Typical options:
 * `gcloud auth application-default login`
 * `GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json`
 
-5. Implemented tools
+5. ChatGPT compatibility
+------------------------
+
+OpenAI currently supports remote MCP servers in ChatGPT Web developer mode.
+The ChatGPT mobile app does not support MCP apps.
+
+That means:
+
+* `pnpm mcp:start` is for local MCP clients only
+* `pnpm mcp:http:start` is the transport shape needed for ChatGPT Web
+* ChatGPT still needs a publicly reachable URL, so local HTTP usually needs a tunnel or deployment target
+* ChatGPT should register the MCP endpoint as `OAuth`
+* the current OAuth flow is single-user and gated by an approval secret page
+
+Recommended local flow for ChatGPT Web testing:
+
+1. Start the HTTP MCP server.
+2. Expose it with a tunnel such as `ngrok` or a Cloud Run deployment.
+3. Set `TASKAPI_MCP_PUBLIC_BASE_URL` to that public HTTPS origin.
+4. In ChatGPT Web, enable developer mode and add the remote MCP server URL.
+5. Choose `OAuth` during registration and complete the approval-secret step in the browser.
+
+Current endpoint layout:
+
+* `POST <base-url>/mcp`
+* `GET <base-url>/health`
+* `GET <base-url>/.well-known/oauth-protected-resource/mcp`
+* `GET <base-url>/.well-known/oauth-authorization-server`
+
+Unauthenticated `POST /mcp` returns `401` with `WWW-Authenticate` metadata when OAuth is enabled.
+Authorized `GET` and `DELETE` on `/mcp` return `405 Method not allowed.` in this stateless setup.
+`/health` intentionally stays global so probes remain stable even when `TASKAPI_MCP_PATH` changes.
+
+If port `8787` is already occupied locally, set `TASKAPI_MCP_PORT` or `PORT` before starting the HTTP server.
+
+6. Implemented tools
 --------------------
 
 The current tool set is:
@@ -68,7 +142,7 @@ The current tool set is:
 Each tool maps directly to shared application-layer services.
 Validation remains centralized in `functions/src/domain/taskapi-validation.ts`.
 
-6. Response contract
+7. Response contract
 --------------------
 
 All tools return the same stable envelope shape in MCP `structuredContent`:
@@ -88,7 +162,7 @@ Supported error codes:
 * `FAILED_PRECONDITION`
 * `INTERNAL`
 
-7. Design constraints
+8. Design constraints
 ---------------------
 
 The MCP server must preserve these boundaries:
